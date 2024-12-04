@@ -1,0 +1,156 @@
+# Default values for helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: cicdweuprddevopsacr.azurecr.io/einvoice/einvoice-ap-service
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations:
+    azure.workload.identity/client-id: "d273e74c-2b45-420d-a17e-a9f71a8a1ab4"
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "einvoice-bpm-svc"
+  binding:
+    roleName: "aks-service"
+
+podAnnotations: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+container:
+  port: 8080
+  managementPort: 8080
+  context: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  host: scfin.dev.atradiusnet.com
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: "/sc/einvoice-ap-service"
+  http:
+    paths:
+      - path: /bpms(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: einvoice-ap-service
+            port:
+              number: 80
+deployment:
+  metadata:
+    labels:
+      custom.log.label: json
+      azure.workload.identity/use: "true"
+  spec:
+    revisionHistoryLimit: 1
+  container:
+    env:
+    volumeMounts:
+      - name: config-mnt
+        mountPath: /app/config
+        readOnly: true
+  terminationGracePeriodSeconds: 60
+  volumes:
+    - name: config-mnt
+      configMap:
+        name: einvoice-ap-service
+
+secrets:
+  - name: MS_TOKEN_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: einvoice-token-secrets
+        key: azure.einvoice.msTokenSecret
+  - name: APM_SECRET_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: einvoice-token-secrets
+        key: azure.einvoice.apmTokenSecret
+
+resources: { }
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+#   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app-name
+                operator: In
+                values:
+                  - einvoice-ap-service
+          topologyKey: kubernetes.io/hostname
+
+configmaps:
+  application: [
+    "server.shutdown=graceful",
+    "RETRY_TIMER_IN_SECONDS=180",
+    "WORKER_TIMEOUT=PT5M",
+    "WORKER_MAX_RETRIES=3",
+    "OAUTH_HOST=https://login-dev2.atradiusnet.com",
+    "IDD_NAME=SIT_JET_WebGateDomain",
+    "TOKEN_GRANTTYPE=CLIENT_CREDENTIALS",
+    "TOKEN_SCOPE=SIT_SC_OIDCWebGateRS.SCDev",
+    "MAIL_TOKEN_URL=https://login.microsoftonline.com",
+    "MAIL_TENANTID=e1b7a2d9-eada-49b6-9f5f-c9c63fd0e7b7",
+    "MAIL_TOKEN_SCOPE=https://graph.microsoft.com/.default",
+    "MAIL_CLIENT_ID=fad462ca-ee18-4ef3-80a8-8f55bec6ed91",
+    "MAIL_CLIENT_SECRET=${MS_TOKEN_SECRET}",
+    "MAIL_URL=https://graph.microsoft.com/v1.0/users/einvoicingservicedev@atradius.com",
+    "ERROR_MAIL_ADDRESS=mahendra.gondi@atradius.com",
+    "MAIL_FROM=mahendra.gondi@atradius.com",
+    "EMAIL_PROCESS_SCHEDULE_TIME=0 0 * * * *",
+    "APM_SERVER_URL=https://atradius-observability-development.apm.uksouth.azure.elastic-cloud.com:443",
+    "APM_TOKEN=${APM_SECRET_TOKEN}",
+    "ENVIRONMENT=dev"
+  ]

@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+management:
+  health:
+    probes:
+      enabled: true
+
+spring:
+  cloud:
+    kubernetes:
+      leader:
+        config-map-name: einvoice-ap-service
+
+services:
+  retryMaxAttempts: ${WORKER_MAX_RETRIES}
+  retryTimer: ${RETRY_TIMER_IN_SECONDS}
+  retryInvoiceTimer: ${RETRY_TIMER_IN_SECONDS}
+  emailSchedule: ${EMAIL_PROCESS_SCHEDULE_TIME}
+  reprocessSchedule: ${FAILED_INVOICES_REPROCESS_SCHEDULE_TIME}
+  summaryReportSchedule: ${SUMMARY_REPORT_SCHEDULE_TIME}
+  maxProcessedCount: ${MAX_REPROCESS_COUNT}
+  oauth:
+    tokenInfoUrl: ${OAUTH_HOST}/oauth2/rest/token/info?
+    tokenUrl: ${OAUTH_HOST}/oauth2/rest/token?
+    basicAuth: ${DMS_BASICAUTH}
+    identityDomainName: ${IDD_NAME}
+    grantType: client_credentials
+    scope: ${TOKEN_SCOPE}
+  mail:
+    tokenUrl: ${MAIL_TOKEN_URL}/${MAIL_TENANTID}/oauth2/v2.0/token
+    tokenGrantType: client_credentials
+    tokenScope: ${MAIL_TOKEN_SCOPE}
+    tokenClientId: ${MAIL_CLIENT_ID}
+    tokenClientSecret: ${MAIL_CLIENT_SECRET}
+    url: ${MAIL_URL}
+    errorMailAddress: ${ERROR_MAIL_ADDRESS}
+    archiveFolder: Archive
+    from: ${MAIL_FROM}
+
+elastic:
+  apm:
+    enabled: true
+    server-url: ${APM_SERVER_URL}
+    service-name: ${spring.application.name}
+    secret-token: ${APM_TOKEN}
+    environment: ${ENVIRONMENT}
+    application-packages: "com.atradius"
+    log-level: "INFO"

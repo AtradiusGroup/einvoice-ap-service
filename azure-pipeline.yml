@@ -1,0 +1,69 @@
+# CI Build Pipeline designed for a maven Microservice
+
+trigger: none
+pool: Atradius-Azure-Self-Hosted
+
+parameters:
+  - name: dev
+    displayName: Deploy to dev
+    type: boolean
+    default: true
+  - name: deployApproach
+    type: string
+    default: kubectl
+    values:
+    - kubectl
+    - helm
+
+variables:
+  - group: "Global Variables"
+  - group: "Artifactory"
+  - group: "Semantic Versioning"
+  - name: ContainerPrefix
+    value: "einvoice"
+  - name: WorkingDirectory
+    value: "."
+  - name: KUBERNETES_NAMESPACE
+    value: "einvoice"
+  - name: javaVersion
+    value: "21"
+
+resources:
+  repositories:
+    - repository: Azure-pipeline-templates
+      type: github
+      name: AtradiusGroup/azure-pipeline-templates
+      ref: refs/tags/v0.4.0
+      endpoint: Azure-pipeline-templates
+
+stages:
+  - stage: BuildStage
+    displayName: Build and package the application
+    jobs:
+      - template: templates/build/java/build-stage.yml@Azure-pipeline-templates
+        parameters:
+          environments: [ "dev", "sit" , "uat", "prd", "dr" ]
+          executeDockerBuild: ${{ ne(variables['Build.Reason'], 'PullRequest')}}
+          deployApproach: ${{ parameters.deployApproach }}
+          usePOMVersion: "true"
+
+  - stage: DeployDev
+    displayName: Deploy to dev
+    condition: and(eq(${{ parameters.dev }}, true), ne(variables['Build.Reason'], 'PullRequest'))
+    dependsOn: BuildStage
+    variables:
+      - group: "Global Variables"
+      - name: appName
+        value: $[stageDependencies.BuildStage.Build.outputs['getVariables.name'] ]
+      - name: appVersion
+        value: $[stageDependencies.BuildStage.Build.outputs['getVariables.version'] ]
+    jobs:
+      - template: templates/deploy/aks/deploy-stage.yml@Azure-pipeline-templates
+        parameters:
+          environment: dev
+          aksName: scfin-weu-dev-app-aks
+          resourceGroupName: scfin-weu-dev-aks-rg
+          resourceManager: atr-sharedcomp-dev-scfin-sc
+          projectId: '$(System.TeamProjectId)'
+          pipelineId: '$(System.DefinitionId)'
+          buildId: '$(Build.BuildId)'
