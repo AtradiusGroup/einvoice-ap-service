@@ -25,21 +25,21 @@ public class LogInfoService {
         log.info(converterService.objectToJson(data));
     }
 
-    public void logProcessTime(EinvoiceVariables variables, LocalDateTime startTime){
+    public void logProcessTime(EinvoiceVariables variables){
         Map<String, Object> data = new HashMap<>();
         data.put("correlationId", variables.getCorrelationId());
         data.put("invoiceNumber", variables.getInvoiceNumber());
         data.put("stage", variables.getProcessStage());
-        data.put("timeTaken", Duration.between(startTime, LocalDateTime.now()).toMillis());
+        data.put("timeTaken", Duration.between(variables.getStageStartTime(), LocalDateTime.now()).toMillis());
         log.info(converterService.objectToJson(data));
     }
 
-    public void logProcessTime(EinvoiceVariables variables, String stage, LocalDateTime startTime){
+    public void logProcessTime(EinvoiceVariables variables, String stage){
         Map<String, Object> data = new HashMap<>();
         data.put("correlationId", variables.getCorrelationId());
         data.put("invoiceNumber", variables.getInvoiceNumber());
         data.put("stage", stage);
-        data.put("timeTaken", Duration.between(startTime, LocalDateTime.now()).toMillis());
+        data.put("timeTaken", Duration.between(variables.getStageStartTime(), LocalDateTime.now()).toMillis());
         log.info(converterService.objectToJson(data));
     }
 
