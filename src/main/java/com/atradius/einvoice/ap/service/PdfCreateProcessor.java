@@ -1,5 +1,6 @@
 package com.atradius.einvoice.ap.service;
 
+import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.exception.PdfCreateException;
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
 import com.atradius.einvoice.ap.model.InvoiceData;
@@ -24,10 +25,12 @@ import java.util.stream.Stream;
 public class PdfCreateProcessor implements UblProcessor{
     private PdfMappingData pdfMappingData;
     private UblXmlReader xmlReader;
+    private APConfig config;
 
-    public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader){
+    public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader, APConfig config){
         this.pdfMappingData = pdfMappingData;
         this.xmlReader = xmlReader;
+        this.config = config;
     }
     @Override
     @Retryable(retryFor = Exception.class, maxAttemptsExpression = "${services.retryMaxAttempts}",
@@ -59,18 +62,21 @@ public class PdfCreateProcessor implements UblProcessor{
             paymentsTable.setWidthPercentage(100f);
             // Add PDF Table Header ->
             Stream.of("ID", "Description", "Qunatity", "Price", "Tax")
-                    .forEach(headerTitle -> { paymentsTable.addCell(addCell(paymentsTable, headerTitle, Element.ALIGN_CENTER)); });
+                    .forEach(headerTitle -> { paymentsTable.addCell(addCell(paymentsTable, headerTitle, Element.ALIGN_CENTER, 1)); });
             List<List<String>> payments = pdfMappingData.getPaymentsData(data.getUblContent(), rootElement);
             payments.stream().forEach(paymentItem -> {
                 paymentItem.stream().forEach(item -> {
                     try {
                         String content = StringUtils.isNotEmpty(item) ? xmlReader.getXPathValue(data.getUblContent(), item) : "";
-                        paymentsTable.addCell(addCell(paymentsTable,content, Element.ALIGN_CENTER));
+                        paymentsTable.addCell(addCell(paymentsTable,content, Element.ALIGN_CENTER, 1));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 });
             });
+            paymentsTable.addCell(addCell(paymentsTable,"Total", Element.ALIGN_RIGHT, 4));
+            String total = xmlReader.getXPathValue(data.getUblContent(), rootElement + config.getTotalAmountPath());
+            paymentsTable.addCell(addCell(paymentsTable,total, Element.ALIGN_CENTER, 1));
             document.add(paymentsTable);
             document.close();
             data.setPdfContents(baos.toByteArray());
@@ -101,14 +107,15 @@ public class PdfCreateProcessor implements UblProcessor{
     }
 
     private PdfPCell addCellWithoutBorder(String xml, PdfPTable table, String content, int alignment)throws Exception{
-        PdfPCell cell = addCell(table, content, alignment);
+        PdfPCell cell = addCell(table, content, alignment, 1);
         cell.setBorder(PdfPCell.NO_BORDER);
         return cell;
     }
-    private PdfPCell addCell(PdfPTable table, String content, int alignment){
+    private PdfPCell addCell(PdfPTable table, String content, int alignment, int colspan){
         PdfPCell cell = new PdfPCell(new Phrase(content));
         cell.setHorizontalAlignment(alignment);
         cell.setVerticalAlignment(alignment);
+        cell.setColspan(colspan);
         return cell;
     }
     private String getDocumentType(String ublXml) throws Exception {

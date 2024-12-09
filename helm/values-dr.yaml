@@ -5,7 +5,7 @@
 replicaCount: 2
 
 image:
-  repository: cicdweuprddevopsacr.azurecr.io/einvoice/einvoice-bpm-service
+  repository: cicdweuprddevopsacr.azurecr.io/einvoice/einvoice-ap-service
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -21,7 +21,7 @@ serviceAccount:
     azure.workload.identity/client-id: "3f9a34e3-d211-4e96-a782-f23e1f94212b"
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "einvoice-bpm-svc"
+  name: "einvoice-ap-svc"
   binding:
     roleName: "aks-service"
 
@@ -54,14 +54,14 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/x-forwarded-prefix: "/sc/einvoice-bpm-service"
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: "/sc/einvoice-ap-service"
   http:
     paths:
-      - path: /bpms(/|$)(.*)
+      - path: /aps(/|$)(.*)
         pathType: Prefix
         backend:
           service:
-            name: einvoice-bpm-service
+            name: einvoice-ap-service
             port:
               number: 80
 deployment:
@@ -81,34 +81,14 @@ deployment:
   volumes:
     - name: config-mnt
       configMap:
-        name: einvoice-bpm-service
+        name: einvoice-ap-service
 
 secrets:
-  - name: DMS_TOKEN_SECRET
-    valueFrom:
-      secretKeyRef:
-        name: einvoice-token-secrets
-        key: azure.einvoice.dmsTokenSecret
   - name: MS_TOKEN_SECRET
     valueFrom:
       secretKeyRef:
         name: einvoice-token-secrets
         key: azure.einvoice.msTokenSecret
-  - name: CAMUNDA_TOKEN_SECRET
-    valueFrom:
-      secretKeyRef:
-        name: einvoice-token-secrets
-        key: azure.einvoice.camundaTokenSecret
-  - name: BILLTRUST_TOKEN_SECRET
-    valueFrom:
-      secretKeyRef:
-        name: einvoice-token-secrets
-        key: azure.einvoice.billtrustTokenSecret
-  - name: BILLTRUST_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: einvoice-token-secrets
-        key: azure.einvoice.billtrustPassword
   - name: APM_SECRET_TOKEN
     valueFrom:
       secretKeyRef:
@@ -148,42 +128,25 @@ affinity:
               - key: app-name
                 operator: In
                 values:
-                  - einvoice-bpm-service
+                  - einvoice-ap-service
           topologyKey: kubernetes.io/hostname
 
 configmaps:
   application: [
     "server.shutdown=graceful",
-    "EINVOICE_INTEGRATION_URL=http://einvoice-integration-service/einvoice/integration",
-    "RETRY_TIMER_IN_SECONDS=180",
-    "WORKER_TIMEOUT=PT10M",
+    "RETRY_TIMER_IN_SECONDS=60",
     "WORKER_MAX_RETRIES=3",
-    "DMS_URL=https://api.ipd.atradiusnet.com",
-    "DMS_BASICAUTH=${DMS_TOKEN_SECRET}",
-    "DMS_IDD_NAME=PROD_JET_WebGateDomain",
-    "DMS_SCOPE=PROD_SC_OIDCWebGateRS.SCPrd",
-    "OAUTH_HOST=https://login-prd.atradiusnet.com",
-    "IDD_NAME=PROD_JET_WebGateDomain",
     "TOKEN_GRANTTYPE=CLIENT_CREDENTIALS",
-    "TOKEN_SCOPE=PROD_SC_OIDCWebGateRS.SCPrd",
     "MAIL_TOKEN_URL=https://login.microsoftonline.com",
     "MAIL_TENANTID=e1b7a2d9-eada-49b6-9f5f-c9c63fd0e7b7",
     "MAIL_TOKEN_SCOPE=https://graph.microsoft.com/.default",
     "MAIL_CLIENT_ID=fad462ca-ee18-4ef3-80a8-8f55bec6ed91",
     "MAIL_CLIENT_SECRET=${MS_TOKEN_SECRET}",
-    "MAIL_URL=https://graph.microsoft.com/v1.0/users/einvoicingserviceprod@atradius.com",
-    "ERROR_MAIL_ADDRESS=sceinvoicinglive@atradius.com",
-    "MAIL_FROM=my@oracle.com",
-    "EMAIL_PROCESS_SCHEDULE_TIME=0 30 9 * * *",
-    "FAILED_INVOICES_REPROCESS_SCHEDULE_TIME=0 0 15 * * *",
-    "SUMMARY_REPORT_SCHEDULE_TIME=0 0 0 0 0 1",
-    "EINVOICE_AZ_DATABASE_URL=jdbc:sqlserver://scfin-neu-dr-ein-sql.database.windows.net:1433;database=scfin-neu-dr-ein-sqldb;Authentication=ActiveDirectoryMSI;encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;",
-    "BILLTRUST_ENDPOINT=https://portal.order2cash.com/api/",
-    "BILLTRUST_BASICAUTH=Basic ${BILLTRUST_TOKEN_SECRET}",
-    "BILLTRUST_USER=prddatadelivery.atradiuscollections@billtrust.com",
-    "BILLTRUST_PASSWORD=${BILLTRUST_PASSWORD}",
-    "GENERATE_DDL=false",
-    "MAX_REPROCESS_COUNT=2",
+    "MAIL_URL=https://graph.microsoft.com/v1.0/users/sceinvoicinglive@atradius.com",
+    "MAIL_ADDRESS=sceinvoicinglive@atradius.com",
+    "RECIPIENT_MAIL_ADDRESS=sceinvoicinglive@atradius.com",
+    "PROCESSED_FOLDER_ID=AAMkADQwMDQyOTgyLTFlZGQtNGUzZC04Y2FjLTY3NThkMDNjZmE2ZAAuAAAAAAAu-GeeLCS4SIvucaia6WUqAQA5_ZhLM1j3TqTPdeCy0mqhAAD5CiJXAAA=",
+    "EMAIL_PROCESS_SCHEDULE_TIME=0 0 * * * *",
     "APM_SERVER_URL=https://atradius-observability-production.apm.uksouth.azure.elastic-cloud.com:443",
     "APM_TOKEN=${APM_SECRET_TOKEN}",
     "ENVIRONMENT=dr"

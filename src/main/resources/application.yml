@@ -38,7 +38,7 @@ services:
     recipientEmailAddress: ${RECIPIENT_MAIL_ADDRESS}
     archiveFolder: Archive
     reviewFolder: Review
-    processedFolder: Processed
+    processedFolderId: ${PROCESSED_FOLDER_ID}
 
 elastic:
   apm:
@@ -86,6 +86,7 @@ invoice:
       Bank Name::
     payments:
       repeatTag: cac:InvoiceLine
+      totalAmountPath: "/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount/text()"
       mappings: >
         cbc:ID,
         cac:Item.cbc:Description,

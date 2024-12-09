@@ -32,8 +32,7 @@ public class EmailService{
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(msToken);
         String url = String.join("",config.getMailUrl(),"/mailFolders/", config.getProcessedFolder(),
-                "/messages?$select=id,subject", "&$filter=from/emailAddress/address eq '", config.getMailAddress(),
-                "' and flag/flagStatus eq 'Flagged'");
+                "/messages?$select=id,subject", "&$filter=flag/flagStatus eq 'Flagged'");
         ResponseEntity<String> responseEntity = null;
         try {
             responseEntity = restService.sendRequest(url, headers, null, HttpMethod.GET);
