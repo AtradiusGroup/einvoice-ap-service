@@ -14,12 +14,16 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 public class Message {
-    @JsonProperty("subject")
-    private String subject;
-    @JsonProperty("body")
-    private MessageBody body;
     @JsonProperty("toRecipients")
     private List<Recipient> toRecipients = new ArrayList<>();
+    @JsonProperty("attachments")
+    private List<Attachment> attachments = new ArrayList<>();
+    @JsonProperty("subject")
+    private String subject;
     @JsonProperty("ccRecipients")
     private List<Recipient> ccRecipients = new ArrayList<>();
+    @JsonProperty("body")
+    private MessageBody body;
+    @JsonProperty("hasAttachments")
+    private Boolean hasAttachments;
 }

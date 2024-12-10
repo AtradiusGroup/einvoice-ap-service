@@ -34,9 +34,11 @@ services:
     tokenClientId: ${MAIL_CLIENT_ID}
     tokenClientSecret: ${MAIL_CLIENT_SECRET}
     url: ${MAIL_URL}
-    errorMailAddress: ${ERROR_MAIL_ADDRESS}
+    mailAddress: ${MAIL_ADDRESS}
+    recipientEmailAddress: ${RECIPIENT_MAIL_ADDRESS}
     archiveFolder: Archive
-    from: ${MAIL_FROM}
+    reviewFolder: Review
+    processedFolderId: ${PROCESSED_FOLDER_ID}
 
 elastic:
   apm:
@@ -47,3 +49,48 @@ elastic:
     environment: ${ENVIRONMENT}
     application-packages: "com.atradius"
     log-level: "INFO"
+
+namespaces: "{\
+  cbc: \"urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2\",\
+  cac: \"urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2\",\
+  ns0: \"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2\",\
+  ns1: \"urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2\"\
+  }"
+
+invoice:
+  mapping:
+    supplier: >
+      Supplier::,
+      /cac:AccountingSupplierParty/cac:Party/cac:PartyName/cbc:Name/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:StreetName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:BuildingName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CityName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:PostalZone/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:Name/text()
+    invoice: >
+      Invoice Number::/cbc:ID/text(),
+      Invoice Date::/cbc:IssueDate/text(),
+      Payment Term::/cac:PaymentTerms/cac:SettlementPeriod/cbc:DurationMeasure/text(),
+      Invoice Due Date::/cbc:DueDate/text(),
+      Invoice Currency::/cbc:DocumentCurrencyCode/text()
+    customer: >
+      Customer::,
+      /cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:StreetName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:BuildingName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:CityName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:PostalZone/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:Name/text()
+    bank: >
+      Bank Name::
+    payments:
+      repeatTag: cac:InvoiceLine
+      totalAmountPath: "/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount/text()"
+      mappings: >
+        cbc:ID,
+        cac:Item.cbc:Description,
+        cac:Item.cbc:PackQuantity,
+        cac:Price.cbc:PriceAmount,
+        cac:TaxTotal.cbc:TaxAmount

@@ -36,6 +36,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+			<version>${spring-boot.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-log4j2</artifactId>
 			<version>${spring-boot.version}</version>
 		</dependency>
@@ -100,6 +105,11 @@
 			<artifactId>andromeda-sdk-starter-observability</artifactId>
 			<version>${andromeda.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.itextpdf</groupId>
+			<artifactId>itextpdf</artifactId>
+			<version>5.5.13.3</version>
+		</dependency>
 
 
 		<dependency>
@@ -137,10 +147,9 @@
 					</execution>
 				</executions>
 			</plugin>
+
 		</plugins>
 	</build>
-
-
 </project>
 
 

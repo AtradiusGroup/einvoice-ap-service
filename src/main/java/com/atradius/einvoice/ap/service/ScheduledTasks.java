@@ -11,15 +11,25 @@ public class ScheduledTasks {
     private String localEnv;
     private ManagerContext managerContext;
     private MailRetrieveService mailRetrieveService;
+    private MailProcessedService mailProcessedService;
 
-    public ScheduledTasks(ManagerContext managerContext, MailRetrieveService mailRetrieveService){
+    public ScheduledTasks(ManagerContext managerContext, MailRetrieveService mailRetrieveService,
+                          MailProcessedService mailProcessedService){
         this.managerContext = managerContext;
         this.mailRetrieveService = mailRetrieveService;
+        this.mailProcessedService = mailProcessedService;
     }
     @Scheduled(cron = "${services.emailSchedule}")
     public void processUblEmailTask() {
         if (isLeader()) {
             mailRetrieveService.processEmails();
+        }
+    }
+
+    @Scheduled(cron = "${services.emailSchedule}")
+    public void processReadyEmailTask() {
+        if (isLeader()) {
+            mailProcessedService.moveProcessedEmails();
         }
     }
 

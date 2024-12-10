@@ -2,6 +2,8 @@ package com.atradius.einvoice.ap.service;
 
 import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
+import com.atradius.einvoice.ap.model.InvoiceData;
+import com.itextpdf.xmp.impl.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,7 +40,7 @@ public class MailRetrieveService{
             String msToken = jsonConverter.getStringValue(msTokenResponse.getBody(), "access_token");
             List<Map> mailMessages = null;
             do {
-                ResponseEntity<String> emailListResponse = emailService.getMessages(msToken);
+                ResponseEntity<String> emailListResponse = emailService.getMessagesExcludedFrom(msToken);
                 if (emailListResponse.getStatusCode().is2xxSuccessful()) {
                     mailMessages = jsonConverter.getListValue(emailListResponse.getBody(), "value");
                     processUBL(mailMessages, msToken);
@@ -57,27 +59,33 @@ public class MailRetrieveService{
     private void processUBL(List<Map> mailMessages, String msToken){
         for (Map mail : mailMessages) {
             String messageId = (String) mail.get("id");
-            ResponseEntity<String> messageResponse = emailService.getMessage(msToken, messageId);
+            ResponseEntity<String> messageResponse = emailService.getMessageAttachments(msToken, messageId);
             if (messageResponse.getStatusCode().is2xxSuccessful()) {
                 try {
-                    Map mailDetails = jsonConverter.getMapValue(messageResponse.getBody(), "body");
-                    String mailContent = (String) mailDetails.get("content");
-                    mailContent = mailContent.replace(MAIL_WARNING_MSG, "");
-                    mailContent = mailContent.substring(0, mailContent.indexOf("</OES_EMAIL_OUT>") + 16);
-                    String ublContent = ublXmlReader.retrieveCDATA(mailContent.trim());
-                    if (StringUtils.isNotEmpty(ublContent)) {
+                    List<Map<String, String>> attachments = jsonConverter.getListValue(messageResponse.getBody(), "value");
+                    String contents = attachments.stream().filter(attachment -> "application/xml".equals(attachment.get("contentType")))
+                            .map(attachment -> attachment.get("contentBytes")).findFirst().orElse(null);
+                    if (StringUtils.isNotEmpty(contents)) {
                         logInfoService.logInfo("Extracted ubl content from email");
-                        String invoiceNumber = ublXmlReader.getElementValue(ublContent, "ID", UblXmlReader.CBC_NAMESPACE);
-                        String supplierParty = ublXmlReader.getElementValue(ublContent, "AccountingSupplierParty.Party.PartyName.Name", UblXmlReader.CAC_NAMESPACE);
-                        String documentFileType = ublXmlReader.getElementValue(ublContent, "Note", null);
-                        EinvoiceVariables variables = config.addVariables(invoiceNumber, documentFileType, supplierParty, ublContent);
-                        asyncService.startProcess(variables);
-                        ResponseEntity<String> moveResp = emailService.moveMessage(msToken, messageId);
+                        EinvoiceVariables variables = config.addVariables();
+                        InvoiceData data = new InvoiceData(Base64.decode(contents), null);
+                        String ublXml = ublXmlReader.getElementValue(data.getUblContent(), "cbc:UBLVersionID");
+                        String processedFolder = StringUtils.isNotEmpty(ublXml) ? config.getArchiveFolder() : config.getReviewFolder();
+                        if(StringUtils.isNotEmpty(ublXml)) {
+                            String invoiceNumber = ublXmlReader.getElementValue(data.getUblContent(), "cbc:ID");
+                            logInfoService.logInfo("Processing ubl xml contents received through mail attachment");
+                            variables.setInvoiceNumber(invoiceNumber);
+                            variables.setMessageSubject((String)mail.get("subject"));
+                            asyncService.startProcess(variables, data);
+                        }else{
+                            logInfoService.logInfo("Unexpected invoice xml content so it will be moved to review folder");
+                        }
+                        ResponseEntity<String> moveResp = emailService.moveMessage(msToken, messageId, processedFolder);
                         if (moveResp.getStatusCode().isError()) {
-                            logInfoService.logInfo("failed to archive mail subject "+ mail.get("subject"));
+                            logInfoService.logInfo("failed moving to "+ processedFolder + " of subject "+ mail.get("subject"));
                         }
                     } else {
-                        logInfoService.logInfo("ubl content is empty");
+                        logInfoService.logInfo("doesn't find the attachment");
                     }
                 }catch(Exception ex1){
                     logInfoService.logError("Failed to process email ", ex1);
