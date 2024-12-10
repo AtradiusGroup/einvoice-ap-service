@@ -12,12 +12,14 @@ public class ScheduledTasks {
     private ManagerContext managerContext;
     private MailRetrieveService mailRetrieveService;
     private MailProcessedService mailProcessedService;
+    private MailMoveService mailMoveService;
 
     public ScheduledTasks(ManagerContext managerContext, MailRetrieveService mailRetrieveService,
-                          MailProcessedService mailProcessedService){
+                          MailProcessedService mailProcessedService, MailMoveService mailMoveService){
         this.managerContext = managerContext;
         this.mailRetrieveService = mailRetrieveService;
         this.mailProcessedService = mailProcessedService;
+        this.mailMoveService = mailMoveService;
     }
     @Scheduled(cron = "${services.emailSchedule}")
     public void processUblEmailTask() {
@@ -29,7 +31,14 @@ public class ScheduledTasks {
     @Scheduled(cron = "${services.emailSchedule}")
     public void processReadyEmailTask() {
         if (isLeader()) {
-            mailProcessedService.moveProcessedEmails();
+            mailProcessedService.sendFlaggedEmails();
+        }
+    }
+
+    @Scheduled(cron = "${services.emailSchedule}")
+    public void moveProcessedEmailTask() {
+        if (isLeader()) {
+            mailMoveService.moveProcessedEmails();
         }
     }
 
