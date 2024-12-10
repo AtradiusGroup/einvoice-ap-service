@@ -60,7 +60,7 @@ public class APConfig {
     @Value(("${invoice.mapping.payments.mappings}"))
     private List<String> paymentMappings;
     @Value(("${invoice.mapping.payments.repeatTag}"))
-    private String paymentTag;
+    private String paymentTag1;
     @Value(("${invoice.mapping.payments.totalAmountPath}"))
     private String totalAmountPath;
     @Value(("#{${namespaces}}"))

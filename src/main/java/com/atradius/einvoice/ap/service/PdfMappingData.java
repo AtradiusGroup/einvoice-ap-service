@@ -38,7 +38,7 @@ public class PdfMappingData {
 
     public List<List<String>> getPaymentsData(String xml, String rootElement)throws Exception{
         List<List<String>> result = new ArrayList<>();
-        NodeList nodes = ublXmlReader.getNodes(xml, config.getPaymentTag());
+        NodeList nodes = ublXmlReader.getNodes(xml, rootElement.indexOf("Invoice") != -1 ? "cac:InvoiceLine" : "cac:CreditNoteLine");
         for(int i = 0; i < nodes.getLength(); i++){
             List<String> row = new ArrayList<>();
             Element node = (Element) nodes.item(i);

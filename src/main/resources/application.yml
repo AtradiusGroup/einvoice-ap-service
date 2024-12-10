@@ -53,7 +53,8 @@ elastic:
 namespaces: "{\
   cbc: \"urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2\",\
   cac: \"urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2\",\
-  ns0: \"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2\"\
+  ns0: \"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2\",\
+  ns1: \"urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2\"\
   }"
 
 invoice:

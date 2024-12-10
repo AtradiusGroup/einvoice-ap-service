@@ -44,7 +44,7 @@ public class PdfCreateProcessor implements UblProcessor{
             Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.BLACK);
 
             variables.setDocumentType(getDocumentType(data.getUblContent()));
-            String rootElement = "INVOICE".equalsIgnoreCase(variables.getDocumentType()) ? "/ns0:Invoice" : "/ns0:CreditNote";
+            String rootElement = "INVOICE".equalsIgnoreCase(variables.getDocumentType()) ? "/ns0:Invoice" : "/ns1:CreditNote";
             addParagraphText(document, headerFont, variables.getDocumentType(), Element.ALIGN_CENTER);
             document.add(Chunk.NEWLINE);
 
@@ -123,7 +123,7 @@ public class PdfCreateProcessor implements UblProcessor{
         if (xmlReader.getElementValue(ublXml, "cbc:InvoiceTypeCode", null) != null) {
             documentType = "INVOICE";
         } else if (xmlReader.getElementValue(ublXml, "cbc:CreditNoteTypeCode", null) != null) {
-            documentType = "CREDIT_NOTE";
+            documentType = "CREDITNOTE";
         } else {
             documentType = "UNKOWN";
         }
