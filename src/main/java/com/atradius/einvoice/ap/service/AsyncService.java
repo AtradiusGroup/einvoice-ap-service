@@ -1,14 +1,14 @@
 package com.atradius.einvoice.ap.service;
 
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
-import com.atradius.einvoice.ap.exception.PdfCreateException;
 import com.atradius.einvoice.ap.model.InvoiceData;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
-import static com.atradius.einvoice.ap.APConstants.*;
+import static com.atradius.einvoice.ap.APConstants.WORKFLOW_STAGE_PDFCREATION;
+import static com.atradius.einvoice.ap.APConstants.WORKFLOW_STAGE_PDFSENT;
 
 @Service
 public class AsyncService {
@@ -25,17 +25,11 @@ public class AsyncService {
     @Async("threadPoolTaskExecutor")
     public void startProcess(EinvoiceVariables variables, InvoiceData data)throws Exception{
         logInfoService.logInfo(variables.getCorrelationId(),"current processing stage is "+ variables.getProcessStage());
-        try {
-            if (WORKFLOW_STAGE_PDFCREATION.equals(variables.getProcessStage())) {
-                processStage(pdfCreateProcessor, variables, data, WORKFLOW_STAGE_PDFSENT);
-            }
-            if (WORKFLOW_STAGE_PDFSENT.equals(variables.getProcessStage())) {
-                processStage(sendProcessor, variables, data, null);
-            }
-        }catch (PdfCreateException pe){
-            logInfoService.logProcessTime(variables);
-        }catch (Exception e){
-            logInfoService.logProcessTime(variables);
+        if (WORKFLOW_STAGE_PDFCREATION.equals(variables.getProcessStage())) {
+            processStage(pdfCreateProcessor, variables, data, WORKFLOW_STAGE_PDFSENT);
+        }
+        if (WORKFLOW_STAGE_PDFSENT.equals(variables.getProcessStage())) {
+            processStage(sendProcessor, variables, data, null);
         }
     }
 

@@ -108,7 +108,7 @@ public class PdfCreateProcessor implements UblProcessor{
 
     private PdfPCell addCellWithoutBorder(String xml, PdfPTable table, String content, int alignment)throws Exception{
         PdfPCell cell = addCell(table, content, alignment, 1);
-        cell.setBorder(PdfPCell.NO_BORDER);
+        cell.setBorder(Rectangle.NO_BORDER);
         return cell;
     }
     private PdfPCell addCell(PdfPTable table, String content, int alignment, int colspan){
