@@ -31,7 +31,7 @@ public class EmailService{
     public ResponseEntity<String> getFlaggedMessagesFromProcessed(String msToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(msToken);
-        String url = String.join("",config.getMailUrl(),"/mailFolders/", config.getProcessedFolder(),
+        String url = String.join("",config.getMailUrl(),"/mailFolders/", config.getProcessedFolderId(),
                 "/messages?$select=id,subject", "&$filter=flag/flagStatus eq 'Flagged'");
         ResponseEntity<String> responseEntity = null;
         try {
@@ -45,6 +45,10 @@ public class EmailService{
 
     public ResponseEntity<String> getMessagesExcludedFrom(String msToken) {
         return getMessages(msToken, config.getMailAddress(), false);
+    }
+
+    public ResponseEntity<String> getMessagesReceivedFrom(String msToken) {
+        return getMessages(msToken, config.getMailAddress(), true);
     }
 
     public ResponseEntity<String> getMessages(String msToken, String from, boolean include) {

@@ -74,6 +74,6 @@ public class MailProcessedService {
             logInfoService.logInfo("Failed to retrieve email token: error status code" +
                     msTokenResponse.getStatusCode().value() + "and description " + msTokenResponse.getBody());
         }
-        logInfoService.logProcessTime("MoveProcessedEmails", startTime);
+        logInfoService.logProcessTime("SendFlaggedEmails", startTime);
     }
 }
