@@ -39,7 +39,7 @@ public class MailMoveService {
                     mailMessages = jsonConverter.getListValue(emailListResponse.getBody(), "value");
                     for (Map mail : mailMessages) {
                         String messageId = (String) mail.get("id");
-                        ResponseEntity<String> moveResp = emailService.moveMessage(msToken, messageId, config.getProcessedFolder());
+                        ResponseEntity<String> moveResp = emailService.moveMessage(msToken, messageId, config.getProcessedFolderId());
                         if (moveResp.getStatusCode().isError()) {
                             logInfoService.logInfo("failed moving to "+ config.getProcessedFolder() + " of subject "+ mail.get("subject"));
                         }
