@@ -1,0 +1,8 @@
+# Any change change inside the `.github/workflows/` directory or to Azure Pipelines
+# will require approval from a member of @AtradiusGroup/atrd-global-codeowners team.
+
+# GitHub Workflows
+.github/workflows/ @AtradiusGroup/atrd-global-codeowners
+
+# Azure Pipeline files
+az*-*.y*ml @AtradiusGroup/atrd-global-codeowners
