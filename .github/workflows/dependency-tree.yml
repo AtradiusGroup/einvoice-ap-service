@@ -1,0 +1,17 @@
+name: "Maven Dependency Tree"
+
+on: [ pull_request, push ]
+
+jobs:
+  generate-tree:
+    name: Analyse Dependency Tree
+    runs-on: Atradius-Azure-Self-Hosted
+    timeout-minutes: 2
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Maven Dependency Tree Dependency Submission
+      uses: advanced-security/maven-dependency-submission-action@v4
+      with:
+        directory: .
