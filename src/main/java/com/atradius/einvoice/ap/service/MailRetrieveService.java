@@ -3,12 +3,12 @@ package com.atradius.einvoice.ap.service;
 import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
 import com.atradius.einvoice.ap.model.InvoiceData;
-import com.itextpdf.xmp.impl.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -68,7 +68,7 @@ public class MailRetrieveService{
                     if (StringUtils.isNotEmpty(contents)) {
                         logInfoService.logInfo("Extracted ubl content from email");
                         EinvoiceVariables variables = config.addVariables();
-                        InvoiceData data = new InvoiceData(Base64.decode(contents), null);
+                        InvoiceData data = new InvoiceData(new String(Base64.getDecoder().decode(contents), "UTF-8"), null);
                         String ublXml = ublXmlReader.getElementValue(data.getUblContent(), "cbc:UBLVersionID");
                         String processedFolder = StringUtils.isNotEmpty(ublXml) ? config.getArchiveFolder() : config.getReviewFolder();
                         if(StringUtils.isNotEmpty(ublXml)) {

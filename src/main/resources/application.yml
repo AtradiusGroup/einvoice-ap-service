@@ -91,7 +91,7 @@ invoice:
       totalAmountPath: "/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount/text()"
       mappings: >
         cbc:ID,
-        cac:Item.cbc:Description,
+        cac:Item.cbc:Name,
         cac:Item.cbc:PackQuantity,
         cac:Price.cbc:PriceAmount,
         cac:TaxTotal.cbc:TaxAmount
