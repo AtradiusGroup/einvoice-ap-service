@@ -38,6 +38,7 @@ services:
     recipientEmailAddress: ${RECIPIENT_MAIL_ADDRESS}
     archiveFolder: Archive
     reviewFolder: Review
+    processedFolder: Processed
     processedFolderId: ${PROCESSED_FOLDER_ID}
 
 elastic:

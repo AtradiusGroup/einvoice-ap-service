@@ -29,7 +29,7 @@ public class MailProcessedService {
         this.jsonConverter = jsonConverter;
     }
 
-    public void moveProcessedEmails(){
+    public void sendFlaggedEmails(){
         LocalDateTime startTime = LocalDateTime.now();
         ResponseEntity<String> msTokenResponse = tokenService.getMSToken(config);
         if (msTokenResponse.getStatusCode().is2xxSuccessful()) {
@@ -74,6 +74,6 @@ public class MailProcessedService {
             logInfoService.logInfo("Failed to retrieve email token: error status code" +
                     msTokenResponse.getStatusCode().value() + "and description " + msTokenResponse.getBody());
         }
-        logInfoService.logProcessTime("MoveProcessedEmails", startTime);
+        logInfoService.logProcessTime("SendFlaggedEmails", startTime);
     }
 }
