@@ -2,11 +2,9 @@ package com.atradius.einvoice.ap.service;
 
 import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.model.*;
-import com.itextpdf.text.pdf.codec.Base64;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
