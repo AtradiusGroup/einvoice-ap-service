@@ -42,8 +42,10 @@ public class APConfig {
     private String archiveFolder;
     @Value("${services.mail.reviewFolder}")
     private String reviewFolder;
-    @Value("${services.mail.processedFolderId}")
+    @Value("${services.mail.processedFolder}")
     private String processedFolder;
+    @Value("${services.mail.processedFolderId}")
+    private String processedFolderId;
     @Value("${services.mail.mailAddress}")
     private String mailAddress;
     @Value("${services.mail.recipientEmailAddress}")
@@ -59,8 +61,6 @@ public class APConfig {
     private List<String> bankMappings;
     @Value(("${invoice.mapping.payments.mappings}"))
     private List<String> paymentMappings;
-    @Value(("${invoice.mapping.payments.repeatTag}"))
-    private String paymentTag1;
     @Value(("${invoice.mapping.payments.totalAmountPath}"))
     private String totalAmountPath;
     @Value(("#{${namespaces}}"))
