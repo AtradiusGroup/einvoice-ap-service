@@ -1,0 +1,96 @@
+server:
+  port: 8080
+
+management:
+  health:
+    probes:
+      enabled: true
+
+spring:
+  cloud:
+    kubernetes:
+      leader:
+        config-map-name: einvoice-ap-service
+
+services:
+  retryMaxAttempts: ${WORKER_MAX_RETRIES}
+  retryTimer: ${RETRY_TIMER_IN_SECONDS}
+  retryInvoiceTimer: ${RETRY_TIMER_IN_SECONDS}
+  emailSchedule: ${EMAIL_PROCESS_SCHEDULE_TIME}
+  reprocessSchedule: ${FAILED_INVOICES_REPROCESS_SCHEDULE_TIME}
+  summaryReportSchedule: ${SUMMARY_REPORT_SCHEDULE_TIME}
+  maxProcessedCount: ${MAX_REPROCESS_COUNT}
+  oauth:
+    tokenInfoUrl: ${OAUTH_HOST}/oauth2/rest/token/info?
+    tokenUrl: ${OAUTH_HOST}/oauth2/rest/token?
+    basicAuth: ${DMS_BASICAUTH}
+    identityDomainName: ${IDD_NAME}
+    grantType: client_credentials
+    scope: ${TOKEN_SCOPE}
+  mail:
+    tokenUrl: ${MAIL_TOKEN_URL}/${MAIL_TENANTID}/oauth2/v2.0/token
+    tokenGrantType: client_credentials
+    tokenScope: ${MAIL_TOKEN_SCOPE}
+    tokenClientId: ${MAIL_CLIENT_ID}
+    tokenClientSecret: ${MAIL_CLIENT_SECRET}
+    url: ${MAIL_URL}
+    mailAddress: ${MAIL_ADDRESS}
+    recipientEmailAddress: ${RECIPIENT_MAIL_ADDRESS}
+    archiveFolder: Archive
+    reviewFolder: Review
+    processedFolderId: ${PROCESSED_FOLDER_ID}
+
+elastic:
+  apm:
+    enabled: true
+    server-url: ${APM_SERVER_URL}
+    service-name: ${spring.application.name}
+    secret-token: ${APM_TOKEN}
+    environment: ${ENVIRONMENT}
+    application-packages: "com.atradius"
+    log-level: "INFO"
+
+namespaces: "{\
+  cbc: \"urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2\",\
+  cac: \"urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2\",\
+  ns0: \"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2\",\
+  ns1: \"urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2\"\
+  }"
+
+invoice:
+  mapping:
+    supplier: >
+      Supplier::,
+      /cac:AccountingSupplierParty/cac:Party/cac:PartyName/cbc:Name/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:StreetName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:BuildingName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CityName/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:PostalZone/text(),
+      /cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:Name/text()
+    invoice: >
+      Invoice Number::/cbc:ID/text(),
+      Invoice Date::/cbc:IssueDate/text(),
+      Payment Term::/cac:PaymentTerms/cac:SettlementPeriod/cbc:DurationMeasure/text(),
+      Invoice Due Date::/cbc:DueDate/text(),
+      Invoice Currency::/cbc:DocumentCurrencyCode/text()
+    customer: >
+      Customer::,
+      /cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:StreetName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:AdditionalStreetName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:BuildingName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:CityName/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:PostalZone/text(),
+      /cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:Name/text()
+    bank: >
+      Bank Name::
+    payments:
+      repeatTag: cac:InvoiceLine
+      totalAmountPath: "/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount/text()"
+      mappings: >
+        cbc:ID,
+        cac:Item.cbc:Description,
+        cac:Item.cbc:PackQuantity,
+        cac:Price.cbc:PriceAmount,
+        cac:TaxTotal.cbc:TaxAmount

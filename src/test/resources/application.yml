@@ -1,0 +1,69 @@
+server:
+  port: 8082
+
+spring:
+  cloud:
+    kubernetes:
+      leader:
+        config-map-name: einvoice-bpm-service
+  datasource:
+    url: jdbc:h2:mem:einvoice
+    username: sa
+    password:
+    driverClassName: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    generate-ddl: true
+    show-sql: true
+  h2.console:
+    enabled: true
+    path: /h2-console
+#zeebe.client:
+#  security.plaintext: true
+services:
+  retryMaxAttempts: "3"
+  retryInvoiceTimer: "2"
+  retryTimer: 2
+  integrationUrl: http://localhost:8080/einvoice/integration
+  emailSchedule: "0 0 0 1 * *"
+  reprocessSchedule: "0 0 0 1 * *"
+  summaryReportSchedule: "0 0 0 1 * *"
+  maxProcessedCount: 2
+  dms:
+    url: http://localhost:8080
+    basicAuth: test
+    scope: test
+    iddName: test
+  oauth:
+    tokenInfoUrl: http://localhost:8080/oauth2/rest/token/info?
+    tokenUrl: http://localhost:8080/oauth2/rest/token?
+    basicAuth: test
+    identityDomainName: test
+    grantType: client_credentials
+    scope: test
+  mail:
+    tokenUrl: http://localhost:8080/test/oauth2/v2.0/token
+    tokenGrantType: client_credentials
+    tokenScope: test
+    tokenClientId: test
+    tokenClientSecret: test
+    url: http://localhost:8080/v1.0/users/test
+    errorMailAddress: test
+    archiveFolder: archive
+    from: test
+  billtrust:
+    url: "http://localhost:8080/api/"
+    loginPath: "auth/login"
+    basicAuthToken: "test"
+    username: "test"
+    password: "test"
+    senderPath: "i2d/ingestion/v1/file-ingestion/senders"
+    uploadPath: "i2d/ingestion/v1/file-ingestion/zip/"
+
+  elastic.apm.enabled: true
+  elastic.apm.server-url: http://apm-server:8200
+  elastic.apm.service-name: ${spring.application.name}
+  elastic.apm.secret-token: "xxVpmQB2HMzCL9PgBHVrnxjNXXw5J7bd79DFm6sjBJR5HPXDhcF8MSb3vv4bpg44"
+  elastic.apm.environment: "test"
+  elastic.apm.application-packages: "com.atradius"
+  elastic.apm.log-level: "INFO"
