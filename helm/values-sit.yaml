@@ -81,7 +81,7 @@ deployment:
   volumes:
     - name: config-mnt
       configMap:
-        name: einvoice-bpm-service
+        name: einvoice-ap-service
 
 secrets:
   - name: MS_TOKEN_SECRET

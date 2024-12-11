@@ -1,6 +1,6 @@
 apiVersion: v2
-name: einvoice-bpm-service
-description: EInvoice BPM Service
+name: einvoice-ap-service
+description: EInvoice AP Service
 # A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into versioned archives

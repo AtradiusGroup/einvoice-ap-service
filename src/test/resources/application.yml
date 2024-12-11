@@ -5,7 +5,7 @@ spring:
   cloud:
     kubernetes:
       leader:
-        config-map-name: einvoice-bpm-service
+        config-map-name: einvoice-ap-service
   datasource:
     url: jdbc:h2:mem:einvoice
     username: sa
