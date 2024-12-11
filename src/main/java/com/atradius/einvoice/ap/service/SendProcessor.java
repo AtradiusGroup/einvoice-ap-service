@@ -2,9 +2,8 @@ package com.atradius.einvoice.ap.service;
 
 import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.exception.MailSendException;
-import com.atradius.einvoice.ap.exception.PdfCreateException;
 import com.atradius.einvoice.ap.model.*;
-import com.itextpdf.text.pdf.codec.Base64;
+import com.itextpdf.io.codec.Base64;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
