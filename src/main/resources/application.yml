@@ -74,7 +74,8 @@ invoice:
       Invoice Date::/cbc:IssueDate/text(),
       Payment Term::/cac:PaymentTerms/cac:SettlementPeriod/cbc:DurationMeasure/text(),
       Invoice Due Date::/cbc:DueDate/text(),
-      Invoice Currency::/cbc:DocumentCurrencyCode/text()
+      Invoice Currency::/cbc:DocumentCurrencyCode/text(),
+      VAT Registration::/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID/text()
     customer: >
       Customer::,
       /cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name/text(),

@@ -44,10 +44,10 @@ public class SendProcessor implements UblProcessor{
                 message.setToRecipients(recipients);
 
                 List<Attachment> attachments = new ArrayList<>();
-                attachments.add(new Attachment(variables.getInvoiceNumber() + ".pdf", "application/pdf",
-                        Base64.encodeBytes(data.getPdfContents()), "#microsoft.graph.fileAttachment"));
-                attachments.add(new Attachment(variables.getInvoiceNumber() + ".xml", "application/xml",
-                        Base64.encodeBytes(data.getUblContent().getBytes(StandardCharsets.UTF_8)), "#microsoft.graph.fileAttachment"));
+                attachments.add(new Attachment(Base64.encodeBytes(data.getPdfContents()), "application/pdf",
+                        variables.getInvoiceNumber() + ".pdf", "#microsoft.graph.fileAttachment"));
+                attachments.add(new Attachment(Base64.encodeBytes(data.getUblContent().getBytes(StandardCharsets.UTF_8)), "application/xml",
+                        variables.getInvoiceNumber() + ".xml", "#microsoft.graph.fileAttachment"));
                 message.setAttachments(attachments);
                 message.setHasAttachments(true);
 

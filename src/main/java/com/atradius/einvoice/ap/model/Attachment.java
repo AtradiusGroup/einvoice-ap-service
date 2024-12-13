@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode
 public class Attachment {
-    @JsonProperty("name")
-    private String name;
-    @JsonProperty("contentType")
-    private String contentType;
     @JsonProperty("contentBytes")
     private String contentBytes;
+    @JsonProperty("contentType")
+    private String contentType;
+    @JsonProperty("name")
+    private String name;
     @JsonProperty("@odata.type")
     private String dataType;
 }

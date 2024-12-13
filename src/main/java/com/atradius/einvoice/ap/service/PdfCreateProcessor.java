@@ -1,33 +1,28 @@
 package com.atradius.einvoice.ap.service;
 
 import com.atradius.einvoice.ap.config.APConfig;
-import com.atradius.einvoice.ap.exception.PdfCreateException;
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
 import com.atradius.einvoice.ap.model.InvoiceData;
-import com.itextpdf.io.font.FontConstants;
-import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.border.Border;
-import com.itextpdf.layout.element.*;
-import com.itextpdf.layout.property.HorizontalAlignment;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
-import org.apache.commons.lang3.StringUtils;
+import com.atradius.einvoice.ap.pdf.PdfControls;
+import com.atradius.einvoice.ap.pdf.PdfTable;
+import com.atradius.einvoice.ap.pdf.PdfTableCellData;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
-@Component
+@Service
 public class PdfCreateProcessor implements UblProcessor{
     private PdfMappingData pdfMappingData;
     private UblXmlReader xmlReader;
@@ -40,106 +35,73 @@ public class PdfCreateProcessor implements UblProcessor{
         this.xmlReader = xmlReader;
         this.config = config;
         this.resourceLoader = resourceLoader;
+
     }
     @Override
     @Retryable(retryFor = Exception.class, maxAttemptsExpression = "${services.retryMaxAttempts}",
             backoff = @Backoff(delayExpression = "${services.retryInvoiceTimer}"))
-    public void process(EinvoiceVariables variables, InvoiceData data) throws PdfCreateException {
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            PdfWriter pdfWriter = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(pdfWriter);
-            Document document = new Document(pdf);
+    public void process(EinvoiceVariables variables, InvoiceData data) throws Exception {
+        try(PDDocument document = new PDDocument(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PDType0Font regular = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/Arial.ttf").getInputStream());
+            PDType0Font bold = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/Arial_Bold.ttf").getInputStream());
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+            int lineNumber = 3;
 
-            Image logo = new Image(ImageDataFactory.create(resourceLoader.getResource("classpath:logoAtradius_tagline_red.PNG").getURL()));
-            PdfFont font = PdfFontFactory.createFont(FontConstants.HELVETICA_BOLD);
+            try(PDPageContentStream contents = new PDPageContentStream(document, page)) {
+                PdfControls pdfControls = new PdfControls(contents, page.getMediaBox().getWidth(), page.getMediaBox().getHeight(), regular, bold);
+                String logoPath = resourceLoader.getResource("classpath:logoAtradius_tagline_red.PNG").getFile().getPath();
+                PDImageXObject logo = PDImageXObject.createFromFile(logoPath, document);
+                pdfControls.addLogo(lineNumber, logo);
 
-            Table headerTable = new Table(2);
-            headerTable.setWidth(UnitValue.createPercentValue(100));
-            headerTable.addCell(new Cell(1, 1)
-                    .add(logo.scaleToFit(200.0f, 400.0f))
-                    .setBorder(Border.NO_BORDER)
-                    .setHorizontalAlignment(HorizontalAlignment.LEFT));
+                variables.setDocumentType(getDocumentType(data.getUblContent()));
+                String rootElement = "INVOICE".equalsIgnoreCase(variables.getDocumentType()) ? "/ns0:Invoice" : "/ns1:CreditNote";
+                pdfControls.addHeaderText(lineNumber, variables.getDocumentType());
+                lineNumber += 2;
 
-            variables.setDocumentType(getDocumentType(data.getUblContent()));
-            String rootElement = "INVOICE".equalsIgnoreCase(variables.getDocumentType()) ? "/ns0:Invoice" : "/ns1:CreditNote";
-            headerTable.addCell(new Cell(1, 1)
-                    .add(addParagraphText(font, variables.getDocumentType(), HorizontalAlignment.RIGHT))
-                    .setBorder(Border.NO_BORDER)
-                    .setVerticalAlignment(VerticalAlignment.MIDDLE));
-            document.add(headerTable);
-            addNewLine(document);
+                List<String> supplierData = pdfMappingData.getSupplierData(data.getUblContent(), rootElement);
+                List<String> invoiceData = pdfMappingData.getInvoiceData(data.getUblContent(), rootElement);
+                addTableData(pdfControls, supplierData, invoiceData, lineNumber);
+                lineNumber += supplierData.size() > invoiceData.size() ? supplierData.size() : invoiceData.size() + 1;
 
-            List<String> supplierData = pdfMappingData.getSupplierData(data.getUblContent(), rootElement);
-            List<String> invoiceData = pdfMappingData.getInvoiceData(data.getUblContent(), rootElement);
-            document.add(addTableData(supplierData, invoiceData));
-            addNewLine(document);
+                List<String> customerData = pdfMappingData.getCustomerData(data.getUblContent(), rootElement);
+                List<String> bankData = pdfMappingData.getBankData(data.getUblContent(), rootElement);
+                addTableData(pdfControls, customerData, bankData, lineNumber);
+                lineNumber += customerData.size() > bankData.size() ? customerData.size() : bankData.size() + 1;
 
-            List<String> customerData = pdfMappingData.getCustomerData(data.getUblContent(), rootElement);
-            List<String> bankData = pdfMappingData.getBankData(data.getUblContent(), rootElement);
-            document.add(addTableData(customerData, bankData));
-            addNewLine(document);
+                List<List<String>> paymentsData = new ArrayList<>();
+                paymentsData.add(List.of("ID", "Name", "Qty", "Tax", "Price"));
+                paymentsData.addAll(pdfMappingData.getPaymentsData(data.getUblContent(), rootElement));
+                PdfTable paymentTable = new PdfTable(PdfTableCellData.paymentTableCells, paymentsData);
+                pdfControls.drawTable(paymentTable, lineNumber);
+                lineNumber += paymentsData.size();
 
-            Table paymentsTable = new Table(5);
-            paymentsTable.setWidth(UnitValue.createPercentValue(100)).setTextAlignment(TextAlignment.CENTER)
-                    .setHorizontalAlignment(HorizontalAlignment.CENTER);
-            // Add PDF Table Header ->
-            Stream.of("ID", "Description", "Qunatity", "Price", "Tax")
-                    .forEach(headerTitle -> { paymentsTable.addHeaderCell(new Cell().add(headerTitle).setFont(font)); });
-            List<List<String>> payments = pdfMappingData.getPaymentsData(data.getUblContent(), rootElement);
-            payments.stream().forEach(paymentItem -> {
-                paymentItem.stream().forEach(item -> {
-                    try {
-                        String content = StringUtils.isNotEmpty(item) ? xmlReader.getXPathValue(data.getUblContent(), item) : "";
-                        paymentsTable.addCell(content);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            });
-            paymentsTable.addCell(addCell("Total", HorizontalAlignment.RIGHT, 1, 4).setFont(font));
-            String total = xmlReader.getXPathValue(data.getUblContent(), rootElement + config.getTotalAmountPath());
-            paymentsTable.addCell(addCell(total, HorizontalAlignment.CENTER, 1, 1));
-            document.add(paymentsTable);
-            document.close();
+                List<List<String>> paymentTotalsData = new ArrayList<>();
+                String total = xmlReader.getXPathValue(data.getUblContent(), rootElement + config.getTotalAmountPath());
+                paymentTotalsData.add(List.of("Total", total));
+                PdfTable totalTable = new PdfTable(PdfTableCellData.totalCells, paymentTotalsData);
+                pdfControls.drawTable(totalTable, lineNumber);
+                lineNumber += paymentTotalsData.size();
+
+            }
+            document.save(baos);
             data.setPdfContents(baos.toByteArray());
-        }catch (Exception e){
-            throw new PdfCreateException("Failed to create pdf", e);
         }
     }
 
-    private Table addTableData(List<String> left, List<String> right) throws Exception{
-        Table table = new Table(2);
-        table.setWidth(UnitValue.createPercentValue(100));
+    private void addTableData(PdfControls pdfControls, List<String> left, List<String> right, int lineNumber) throws Exception{
         int maxRows = left.size() > right.size() ? left.size() : right.size();
         for(int i = 0; i < maxRows; i++) {
-            table.addCell(addCellWithoutBorder(getListItem(left, i), HorizontalAlignment.LEFT, 1, 1));
-            table.addCell(addCellWithoutBorder(getListItem(right, i), HorizontalAlignment.RIGHT, 1, 1));
+            pdfControls.addText(lineNumber, getListItem(left, i), true);
+            pdfControls.addText(lineNumber, getListItem(right, i), false);
+            lineNumber += 1;
         }
-        return table;
     }
 
     private String getListItem(List<String> items, int index){
         return index < items.size() ? items.get(index) : "";
     }
 
-    private Paragraph addParagraphText(PdfFont font, String text, HorizontalAlignment alignment){
-        Paragraph para = new Paragraph( text).setFont(font);
-        para.setHorizontalAlignment(alignment);
-        return para;
-    }
-
-    private Cell addCellWithoutBorder(String content, HorizontalAlignment alignment, int rowspan, int colspan)throws Exception{
-        Cell cell = addCell(content, alignment, rowspan, colspan);
-        cell.setBorder(Border.NO_BORDER);
-        return cell;
-    }
-    private Cell addCell(String content, HorizontalAlignment alignment, int rowspan, int colspan){
-        Cell cell = new Cell(rowspan, colspan).add(new Paragraph(content));
-        cell.setHorizontalAlignment(alignment);
-        cell.setVerticalAlignment(VerticalAlignment.MIDDLE);
-        cell.setFontSize(10);
-        return cell;
-    }
     private String getDocumentType(String ublXml) throws Exception {
         String documentType = null;
         if (xmlReader.getElementValue(ublXml, "cbc:InvoiceTypeCode", null) != null) {
@@ -150,9 +112,5 @@ public class PdfCreateProcessor implements UblProcessor{
             documentType = "UNKOWN";
         }
         return documentType;
-    }
-
-    private void addNewLine(Document document){
-        document.add(new Paragraph().add(new Text("\n")));
     }
 }
