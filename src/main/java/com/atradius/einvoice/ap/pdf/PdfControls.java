@@ -53,36 +53,28 @@ public class PdfControls {
         float firstPartLength = (font.getStringWidth(lines.get(0)) / 1000 * fontSzie);
         List<String> lines2 = textParts.length == 2 ? wrapText(textParts[1], (pageWidth/2)-firstPartLength) : new ArrayList<>();
         float secondPartLength = lines2.size() > 0 ? (regular.getStringWidth(lines2.get(0)) / 1000 * fontSzie) : 0;
+
+        addText(lines, 0, secondPartLength, left, false);
+        if(textParts.length == 2){
+            addText(lines2, firstPartLength, secondPartLength, left, true);
+        }
+        return lines.size() < lines2.size() ? lines2.size() : lines.size();
+    }
+
+    private void addText(List<String> lines, float firstPartLength, float secondPartLength, boolean left, boolean secondPart) throws IOException{
         for(int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
             contentStream.beginText();
-            contentStream.setFont(text.indexOf(":") != -1 ? bold : regular, fontSzie);
+            contentStream.setFont(lines.get(lineIndex).indexOf(":") != -1 ? bold : regular, fontSzie);
             if(left){
-                contentStream.newLineAtOffset(startX, getPositionY(lineNumber + lineIndex));
+                contentStream.newLineAtOffset(lineIndex == 0 ? (startX + firstPartLength) : startX, getPositionY(lineNumber + lineIndex));
             }else{
                 float lineLength = (regular.getStringWidth(lines.get(lineIndex)) / 1000 * fontSzie);
-                contentStream.newLineAtOffset((pageWidth - secondPartLength - lineLength), getPositionY(lineNumber + lineIndex));
+                contentStream.newLineAtOffset(lineIndex == 0 ? (pageWidth - secondPartLength - (secondPart ? 0: lineLength) ): pageWidth, getPositionY(lineNumber + lineIndex));
             }
 
             contentStream.showText(lines.get(lineIndex));
             contentStream.endText();
         }
-        int lineSize = lines.size();
-        if(textParts.length == 2){
-            for(int lineIndex = 0; lineIndex < lines2.size(); lineIndex++) {
-                contentStream.beginText();
-                contentStream.setFont(regular, fontSzie);
-                if(left){
-                    contentStream.newLineAtOffset(lineIndex == 0 ? (startX + firstPartLength) : startX, getPositionY(lineNumber));
-                }else{
-                    contentStream.newLineAtOffset(lineIndex == 0 ? (pageWidth - secondPartLength): pageWidth, getPositionY(lineNumber));
-                }
-
-                contentStream.showText(lines2.get(lineIndex));
-                contentStream.endText();
-            }
-            lineSize = lineSize < lines2.size() ? lines2.size() : lineSize;
-        }
-        return lineSize;
     }
 
     public void drawTable(PdfTable table)throws IOException {
