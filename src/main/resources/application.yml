@@ -94,5 +94,6 @@ invoice:
         cbc:ID,
         cac:Item.cbc:Name,
         cac:Item.cbc:PackQuantity,
-        cac:Price.cbc:PriceAmount,
-        cac:TaxTotal.cbc:TaxAmount
+        cac:TaxTotal.cac:TaxSubtotal.cbc:Percent,
+        cac:TaxTotal.cbc:TaxAmount,
+        cac:Price.cbc:PriceAmount

@@ -18,7 +18,6 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,46 +41,46 @@ public class PdfCreateProcessor implements UblProcessor{
             backoff = @Backoff(delayExpression = "${services.retryInvoiceTimer}"))
     public void process(EinvoiceVariables variables, InvoiceData data) throws Exception {
         try(PDDocument document = new PDDocument(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            PDType0Font regular = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/Arial.ttf").getInputStream());
-            PDType0Font bold = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/Arial_Bold.ttf").getInputStream());
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
-            int lineNumber = 3;
 
             try(PDPageContentStream contents = new PDPageContentStream(document, page)) {
+                PDType0Font regular = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/NotoSans-Regular.ttf").getInputStream());
+                PDType0Font bold = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/NotoSans-Bold.ttf").getInputStream());
                 PdfControls pdfControls = new PdfControls(contents, page.getMediaBox().getWidth(), page.getMediaBox().getHeight(), regular, bold);
+                pdfControls.lineNumber = 2;
+
                 String logoPath = resourceLoader.getResource("classpath:logoAtradius_tagline_red.PNG").getFile().getPath();
                 PDImageXObject logo = PDImageXObject.createFromFile(logoPath, document);
-                pdfControls.addLogo(lineNumber, logo);
+                pdfControls.addLogo(logo);
 
                 variables.setDocumentType(getDocumentType(data.getUblContent()));
                 String rootElement = "INVOICE".equalsIgnoreCase(variables.getDocumentType()) ? "/ns0:Invoice" : "/ns1:CreditNote";
-                pdfControls.addHeaderText(lineNumber, variables.getDocumentType());
-                lineNumber += 2;
+                pdfControls.addHeaderText(variables.getDocumentType());
+                pdfControls.lineNumber += 3;
 
                 List<String> supplierData = pdfMappingData.getSupplierData(data.getUblContent(), rootElement);
                 List<String> invoiceData = pdfMappingData.getInvoiceData(data.getUblContent(), rootElement);
-                addTableData(pdfControls, supplierData, invoiceData, lineNumber);
-                lineNumber += supplierData.size() > invoiceData.size() ? supplierData.size() : invoiceData.size() + 1;
+                addTableData(pdfControls, supplierData, invoiceData);
+                pdfControls.lineNumber += 1;
 
                 List<String> customerData = pdfMappingData.getCustomerData(data.getUblContent(), rootElement);
                 List<String> bankData = pdfMappingData.getBankData(data.getUblContent(), rootElement);
-                addTableData(pdfControls, customerData, bankData, lineNumber);
-                lineNumber += customerData.size() > bankData.size() ? customerData.size() : bankData.size() + 1;
+                addTableData(pdfControls, customerData, bankData);
+                //line height difference between table row and normal row, reduce empty space starting table;
+                pdfControls.lineNumber += 1;
 
                 List<List<String>> paymentsData = new ArrayList<>();
-                paymentsData.add(List.of("ID", "Name", "Qty", "Tax", "Price"));
+                paymentsData.add(List.of("ID", "Name", "Qty", "Tax%", "Tax", "Amount"));
                 paymentsData.addAll(pdfMappingData.getPaymentsData(data.getUblContent(), rootElement));
                 PdfTable paymentTable = new PdfTable(PdfTableCellData.paymentTableCells, paymentsData);
-                pdfControls.drawTable(paymentTable, lineNumber);
-                lineNumber += paymentsData.size();
+                pdfControls.drawTable(paymentTable);
 
                 List<List<String>> paymentTotalsData = new ArrayList<>();
                 String total = xmlReader.getXPathValue(data.getUblContent(), rootElement + config.getTotalAmountPath());
-                paymentTotalsData.add(List.of("Total", total));
+                paymentTotalsData.add(List.of("Tax Inclusive Amount", total));
                 PdfTable totalTable = new PdfTable(PdfTableCellData.totalCells, paymentTotalsData);
-                pdfControls.drawTable(totalTable, lineNumber);
-                lineNumber += paymentTotalsData.size();
+                pdfControls.drawTable(totalTable);
 
             }
             document.save(baos);
@@ -89,12 +88,12 @@ public class PdfCreateProcessor implements UblProcessor{
         }
     }
 
-    private void addTableData(PdfControls pdfControls, List<String> left, List<String> right, int lineNumber) throws Exception{
+    private void addTableData(PdfControls pdfControls, List<String> left, List<String> right) throws Exception{
         int maxRows = left.size() > right.size() ? left.size() : right.size();
         for(int i = 0; i < maxRows; i++) {
-            pdfControls.addText(lineNumber, getListItem(left, i), true);
-            pdfControls.addText(lineNumber, getListItem(right, i), false);
-            lineNumber += 1;
+            int leftLines = pdfControls.addText(pdfControls.lineNumber, getListItem(left, i), true);
+            int rightLines = pdfControls.addText(pdfControls.lineNumber, getListItem(right, i), false);
+            pdfControls.lineNumber += leftLines > rightLines ? leftLines : rightLines;
         }
     }
 
@@ -112,5 +111,10 @@ public class PdfCreateProcessor implements UblProcessor{
             documentType = "UNKOWN";
         }
         return documentType;
+    }
+
+    public static void main(String[] args)throws Exception{
+        PdfCreateProcessor p = new PdfCreateProcessor(null, null, null, null);
+        p.process(null, null);
     }
 }

@@ -5,19 +5,21 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PdfControls {
     private float pageWidth;
     private float pageHeight;
-    private int fontSzie = 9;
+    private int fontSzie = 10;
     private int headerFontSize = 12;
-    private float lineHeight = 15;
+    private float lineHeight = 18;
     private float pageMargin = 20;
     private float startX = pageMargin;
     private PDType0Font regular;
     private PDType0Font bold;
     private PDPageContentStream contentStream;
+    public int lineNumber = 3;
 
     public PdfControls(PDPageContentStream contentStream, float pageWidth, float pageHeight, PDType0Font regular, PDType0Font bold) {
         this.pageWidth = pageWidth - pageMargin * 2;
@@ -27,7 +29,7 @@ public class PdfControls {
         this.contentStream = contentStream;
     }
 
-    public void addHeaderText(int lineNumber, String text) throws IOException {
+    public void addHeaderText(String text) throws IOException {
         contentStream.beginText();
         contentStream.setFont(bold, headerFontSize);
         float fontSize = headerFontSize;
@@ -39,78 +41,111 @@ public class PdfControls {
         contentStream.endText();
     }
 
-    public void addLogo(int lineNumber, PDImageXObject logo)throws IOException{
+    public void addLogo(PDImageXObject logo)throws IOException{
         contentStream.drawImage(logo, startX, getPositionY(lineNumber), 150, 40);
     }
 
-    public void addText(int lineNumber, String text, boolean left) throws IOException {
+    public int addText(int lineNumber, String text, boolean left) throws IOException {
         String[] textParts = text.split(":");
         PDType0Font font = text.indexOf(":") != -1 ? bold : regular;
-        String firstPart = text.indexOf(":") != -1 ? textParts[0] + ":" : textParts[0];
-        float firstPartLength = (font.getStringWidth(firstPart) / 1000 * fontSzie);
-        float secondPartLength = textParts.length == 2 ? (regular.getStringWidth(textParts[1]) / 1000 * fontSzie) : 0;
-        contentStream.beginText();
-        contentStream.setFont(text.indexOf(":") != -1 ? bold : regular, fontSzie);
-        contentStream.newLineAtOffset(left ? startX : (pageWidth - secondPartLength - firstPartLength), getPositionY(lineNumber));
-        contentStream.showText(firstPart);
-        contentStream.endText();
-        if(textParts.length == 2){
+        String firstPart = text.indexOf(":") != -1 ? textParts[0] + ": " : textParts[0];
+        List<String> lines = wrapText(firstPart, (pageWidth)/2);
+        float firstPartLength = (font.getStringWidth(lines.get(0)) / 1000 * fontSzie);
+        List<String> lines2 = textParts.length == 2 ? wrapText(textParts[1], (pageWidth/2)-firstPartLength) : new ArrayList<>();
+        float secondPartLength = lines2.size() > 0 ? (regular.getStringWidth(lines2.get(0)) / 1000 * fontSzie) : 0;
+        for(int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
             contentStream.beginText();
-            contentStream.setFont(regular, fontSzie);
-            contentStream.newLineAtOffset(left ? (startX + firstPartLength) : (pageWidth - secondPartLength), getPositionY(lineNumber));
-            contentStream.showText(textParts[1]);
+            contentStream.setFont(text.indexOf(":") != -1 ? bold : regular, fontSzie);
+            if(left){
+                contentStream.newLineAtOffset(startX, getPositionY(lineNumber + lineIndex));
+            }else{
+                float lineLength = (regular.getStringWidth(lines.get(lineIndex)) / 1000 * fontSzie);
+                contentStream.newLineAtOffset((pageWidth - secondPartLength - lineLength), getPositionY(lineNumber + lineIndex));
+            }
+
+            contentStream.showText(lines.get(lineIndex));
             contentStream.endText();
         }
-    }
+        int lineSize = lines.size();
+        if(textParts.length == 2){
+            for(int lineIndex = 0; lineIndex < lines2.size(); lineIndex++) {
+                contentStream.beginText();
+                contentStream.setFont(regular, fontSzie);
+                if(left){
+                    contentStream.newLineAtOffset(lineIndex == 0 ? (startX + firstPartLength) : startX, getPositionY(lineNumber));
+                }else{
+                    contentStream.newLineAtOffset(lineIndex == 0 ? (pageWidth - secondPartLength): pageWidth, getPositionY(lineNumber));
+                }
 
-    public void drawTable(PdfTable table, int lineNumber)throws IOException {
-        drawTableGrid(table, lineNumber);
-
-        for(int rowIndex = 0; rowIndex < table.rows(); rowIndex++){
-            drawRow(table, lineNumber + rowIndex, table.getData().get(rowIndex), rowIndex == 0 ? bold : regular);
+                contentStream.showText(lines2.get(lineIndex));
+                contentStream.endText();
+            }
+            lineSize = lineSize < lines2.size() ? lines2.size() : lineSize;
         }
+        return lineSize;
     }
 
-    public void drawRow(PdfTable table, int lineNumber, List<String> row, PDType0Font font)throws IOException{
+    public void drawTable(PdfTable table)throws IOException {
+        for(int rowIndex = 0; rowIndex < table.rows(); rowIndex++){
+            lineNumber += rowIndex;
+            drawHarizantalLine(table);
+            int rowsize = drawRow(table, table.getData().get(rowIndex), rowIndex == 0 ? bold : regular, lineNumber);
+            drawVerticleLine(table, rowsize);
+            lineNumber += rowsize;
+        }
+        lineNumber += 1;
+        drawHarizantalLine(table);
+    }
+
+    public int drawRow(PdfTable table, List<String> row, PDType0Font font, int lineNumber)throws IOException{
+        int rowsize = 0;
         float xPosition = startX;
         for(int columnIndex = 0; columnIndex < table.columns(); columnIndex++){
-            contentStream.beginText();
-            contentStream.setFont(font, fontSzie);
-
-            float textWidth = 0;
+            float cellWidth = table.getCellWidth(pageWidth, columnIndex);
+            List<String> lines = wrapText(row.get(columnIndex), cellWidth);
+            rowsize = lines.size() -1 > rowsize ? lines.size()-1 : rowsize;
             float cellMargin = table.getCells()[columnIndex].getMarginX();
-            if(PdfCell.RIGHT.equals(table.getCells()[columnIndex].getAlignment())){
-                textWidth = font.getStringWidth(row.get(columnIndex)) / 1000 * fontSzie;
-                xPosition += table.getCellWidth(pageWidth, columnIndex) - textWidth - cellMargin*2;
+            float textWidth = 0;
+            if (PdfCell.RIGHT.equals(table.getCells()[columnIndex].getAlignment())) {
+                textWidth = font.getStringWidth(lines.get(0)) / 1000 * (fontSzie-1);
+                xPosition += cellWidth - textWidth - cellMargin * 2;
             }
-            float yPosition = table.cellYPosition(pageHeight, columnIndex, lineNumber);
-            contentStream.newLineAtOffset(xPosition + cellMargin, yPosition);
-            contentStream.showText(row.get(columnIndex));
-            contentStream.endText();
-            if(PdfCell.LEFT.equals(table.getCells()[columnIndex].getAlignment())) {
-                xPosition += table.getCellWidth(pageWidth, columnIndex);
-            }else{
-                xPosition += textWidth + cellMargin*2;
+
+            int cellLineNumber = lineNumber;
+            for(int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+                cellLineNumber += lineIndex;
+                float yPosition = table.cellYPosition(pageHeight, columnIndex, cellLineNumber);
+
+                contentStream.beginText();
+                contentStream.setFont(font, fontSzie-1);
+                contentStream.newLineAtOffset(xPosition + cellMargin, yPosition);
+                contentStream.showText(lines.get(lineIndex));
+                contentStream.endText();
+            }
+
+            if (PdfCell.LEFT.equals(table.getCells()[columnIndex].getAlignment())) {
+                xPosition += cellWidth;
+            } else {
+                xPosition += textWidth + cellMargin * 2;
             }
         }
+        return rowsize;
     }
 
+    private void drawHarizantalLine(PdfTable table)throws IOException{
+        float yPosition = table.yPosition(pageHeight, lineNumber);
+        contentStream.moveTo(startX, yPosition);
+        contentStream.lineTo(pageWidth, yPosition);
+        contentStream.stroke();
+    }
 
-    public void drawTableGrid(PdfTable table, int lineNumber)throws IOException {
-        //Draw horizantle lines
-        for(int rowIndex = 0; rowIndex <= table.rows(); rowIndex++){
-            float yPosition = table.yPosition(pageHeight, lineNumber + rowIndex);
-            contentStream.moveTo(startX, yPosition);
-            contentStream.lineTo(pageWidth, yPosition);
-            contentStream.stroke();
-        }
-
+    private void drawVerticleLine(PdfTable table, int rowsize)throws IOException{
         //Draw verticle lines
         float xPosition = startX;
         float yPosition = table.yPosition(pageHeight, lineNumber);
         for(int cellIndex = 0; cellIndex <= table.columns(); cellIndex++){
             contentStream.moveTo(xPosition, yPosition);
-            contentStream.lineTo(xPosition, yPosition - table.rows() * table.rowHeight());
+            contentStream.lineTo(xPosition, yPosition - table.rowHeight() - table.rowHeight() * rowsize);
             contentStream.stroke();
 
             //No need to draw verticle line for last column
@@ -132,5 +167,27 @@ public class PdfControls {
     private float getPositionY(int lineNumber)throws IOException{
         return pageHeight - lineNumber * lineHeight;
 
+    }
+
+    private List<String> wrapText(String text, float maxWidth)throws IOException{
+        List<String> lines = new ArrayList<>();
+        String[] parts = text.split(" ", -1);
+        StringBuilder line = new StringBuilder(addSpaceAfterColon(parts[0]));
+        for(int index = 1; index < parts.length; index++){
+            String lineText = addSpaceAfterColon( parts[index]);
+            float textWidth = regular.getStringWidth(line.toString()+ " " + lineText) / 1000 * fontSzie;
+            if( textWidth <= maxWidth){
+                line.append(" ").append(lineText);
+            }else{
+                lines.add(line.toString());
+                line = new StringBuilder(lineText);
+            }
+        }
+        lines.add(line.toString());
+        return lines;
+    }
+
+    private String addSpaceAfterColon(String text){
+        return text.indexOf(":") != -1 ? text + " ": text;
     }
 }

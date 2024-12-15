@@ -31,7 +31,7 @@ public class PdfTable {
     }
 
     public float rowHeight(){
-        return 20;
+        return 18;
     }
 
     public float cellYPosition(float pageHeight, int columnIndex, int lineNumber){
