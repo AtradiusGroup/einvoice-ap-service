@@ -3,9 +3,10 @@ package com.atradius.einvoice.ap.pdf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.math.BigDecimal;
 import java.util.List;
+
+import static com.atradius.einvoice.ap.pdf.PdfConstants.*;
 
 @Data
 @AllArgsConstructor
@@ -13,13 +14,14 @@ public class PdfTable {
     private PdfCell[] cells;
     private List<List<String>> data;
 
-    public float getCellWidth(float pageWidth, int cellIndex){
-        float totalCellMargins = 0;
+    public BigDecimal getCellWidth(BigDecimal pageWidth, int cellIndex){
+        BigDecimal totalCellMargins = ZERO;
         for(PdfCell cell : cells){
-            totalCellMargins += cell.getMarginX() * 2;
+            totalCellMargins = totalCellMargins.add(cell.getMarginX().multiply( TWO));
         }
-        float tableWidth = pageWidth -  totalCellMargins;
-        return (cells[cellIndex].getWidth() * tableWidth * 0.01f) + cells[cellIndex].getMarginX() * 2;
+        BigDecimal tableWidth = pageWidth.subtract(totalCellMargins);
+        return cells[cellIndex].getWidth().multiply(tableWidth)
+                .multiply(BigDecimal.valueOf(0.01)).add(cells[cellIndex].getMarginX().multiply(TWO));
     }
 
     public int columns(){
@@ -30,15 +32,11 @@ public class PdfTable {
         return data.size();
     }
 
-    public float rowHeight(){
-        return 18;
+    public BigDecimal cellYPosition(BigDecimal pageHeight, int columnIndex, int lineNumber){
+        return yPosition(pageHeight, lineNumber).subtract(cells[columnIndex].getMarginY());
     }
 
-    public float cellYPosition(float pageHeight, int columnIndex, int lineNumber){
-        return yPosition(pageHeight, lineNumber) - cells[columnIndex].getMarginY();
-    }
-
-    public float yPosition(float pageHeight, int lineNumber){
-        return pageHeight - lineNumber * rowHeight();
+    public BigDecimal yPosition(BigDecimal pageHeight, int lineNumber){
+        return pageHeight.subtract(BigDecimal.valueOf(lineNumber).multiply(LINE_HEIGHT));
     }
 }
