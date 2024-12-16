@@ -4,7 +4,6 @@ import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
 import com.atradius.einvoice.ap.model.InvoiceData;
 import com.atradius.einvoice.ap.pdf.PdfCell;
-import com.atradius.einvoice.ap.pdf.PdfConstants;
 import com.atradius.einvoice.ap.pdf.PdfControls;
 import com.atradius.einvoice.ap.pdf.PdfTable;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -19,8 +18,6 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,20 +32,8 @@ public class PdfCreateProcessor implements UblProcessor{
     private UblXmlReader xmlReader;
     private APConfig config;
     private ResourceLoader resourceLoader;
-
-    private PdfCell[] TOTAL_CELLS = new PdfCell[]{
-            new PdfCell(new BigDecimal(85), new BigDecimal(40), TWELVE, RIGHT),
-            new PdfCell(new BigDecimal(15), new BigDecimal(8.5f), TWELVE, LEFT)
-    };
-
-    private PdfCell[] PAYMENT_TABLE_CELLS = new PdfCell[]{
-            new PdfCell(FIVE, FIVE , TWELVE, LEFT),
-            new PdfCell(new BigDecimal(55), TEN, TWELVE,LEFT),
-            new PdfCell(FIVE, TEN, TWELVE, LEFT),
-            new PdfCell(new BigDecimal(10), TEN, TWELVE, LEFT),
-            new PdfCell(new BigDecimal(10), TEN, TWELVE, LEFT),
-            new PdfCell(new BigDecimal(15), TEN, TWELVE, LEFT)
-    };
+    private PdfCell[] totalCells;
+    private PdfCell[] paymentTableCells;
 
     public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader, APConfig config,
                               ResourceLoader resourceLoader){
@@ -56,6 +41,18 @@ public class PdfCreateProcessor implements UblProcessor{
         this.xmlReader = xmlReader;
         this.config = config;
         this.resourceLoader = resourceLoader;
+        totalCells = new PdfCell[]{
+                new PdfCell(BigDecimal.valueOf(85), BigDecimal.valueOf(40), TWELVE, RIGHT),
+                new PdfCell(BigDecimal.valueOf(15), BigDecimal.valueOf(8.5f), TWELVE, LEFT)
+        };
+        paymentTableCells = new PdfCell[]{
+                new PdfCell(FIVE, FIVE , TWELVE, LEFT),
+                new PdfCell(BigDecimal.valueOf(55), TEN, TWELVE,LEFT),
+                new PdfCell(FIVE, TEN, TWELVE, LEFT),
+                new PdfCell(BigDecimal.valueOf(10), TEN, TWELVE, LEFT),
+                new PdfCell(BigDecimal.valueOf(10), TEN, TWELVE, LEFT),
+                new PdfCell(BigDecimal.valueOf(15), TEN, TWELVE, LEFT)
+        };
 
     }
     @Override
@@ -95,13 +92,13 @@ public class PdfCreateProcessor implements UblProcessor{
                 List<List<String>> paymentsData = new ArrayList<>();
                 paymentsData.add(List.of("ID", "Name", "Qty", "Tax%", "Tax", "Amount"));
                 paymentsData.addAll(pdfMappingData.getPaymentsData(data.getUblContent(), rootElement));
-                PdfTable paymentTable = new PdfTable(PAYMENT_TABLE_CELLS, paymentsData);
+                PdfTable paymentTable = new PdfTable(paymentTableCells, paymentsData);
                 pdfControls.drawTable(paymentTable);
 
                 List<List<String>> paymentTotalsData = new ArrayList<>();
                 String total = xmlReader.getXPathValue(data.getUblContent(), rootElement + config.getTotalAmountPath());
                 paymentTotalsData.add(List.of("Tax Inclusive Amount", total));
-                PdfTable totalTable = new PdfTable(TOTAL_CELLS, paymentTotalsData);
+                PdfTable totalTable = new PdfTable(totalCells, paymentTotalsData);
                 pdfControls.drawTable(totalTable);
 
             }
