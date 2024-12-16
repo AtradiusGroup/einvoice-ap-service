@@ -3,9 +3,9 @@ package com.atradius.einvoice.ap.service;
 import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.model.EinvoiceVariables;
 import com.atradius.einvoice.ap.model.InvoiceData;
+import com.atradius.einvoice.ap.pdf.PdfConstants;
 import com.atradius.einvoice.ap.pdf.PdfControls;
 import com.atradius.einvoice.ap.pdf.PdfTable;
-import com.atradius.einvoice.ap.pdf.PdfTableCellData;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -18,6 +18,8 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,13 +75,13 @@ public class PdfCreateProcessor implements UblProcessor{
                 List<List<String>> paymentsData = new ArrayList<>();
                 paymentsData.add(List.of("ID", "Name", "Qty", "Tax%", "Tax", "Amount"));
                 paymentsData.addAll(pdfMappingData.getPaymentsData(data.getUblContent(), rootElement));
-                PdfTable paymentTable = new PdfTable(PdfTableCellData.paymentTableCells, paymentsData);
+                PdfTable paymentTable = new PdfTable(PdfConstants.PAYMENT_TABLE_CELLS, paymentsData);
                 pdfControls.drawTable(paymentTable);
 
                 List<List<String>> paymentTotalsData = new ArrayList<>();
                 String total = xmlReader.getXPathValue(data.getUblContent(), rootElement + config.getTotalAmountPath());
                 paymentTotalsData.add(List.of("Tax Inclusive Amount", total));
-                PdfTable totalTable = new PdfTable(PdfTableCellData.totalCells, paymentTotalsData);
+                PdfTable totalTable = new PdfTable(PdfConstants.TOTAL_CELLS, paymentTotalsData);
                 pdfControls.drawTable(totalTable);
 
             }
