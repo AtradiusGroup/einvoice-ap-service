@@ -48,14 +48,21 @@ public class MailProcessedService {
                             recipients.add(new Recipient(new EmailAddress(config.getRecipientEmailAddress())));
                             message.setToRecipients(recipients);
 
+
+                            List<Attachment> attachments = new ArrayList<>();
                             List<Map<String, String>> attachmentList = jsonConverter.getListValue(messageResponse.getBody(), "value");
                             attachmentList.stream().forEach(attachment ->{
-                                List<Attachment> attachments = new ArrayList<>();
-                                attachments.add(jsonConverter.jsonToObject(jsonConverter.objectToJson(attachment), Attachment.class));
+                                attachments.add(new Attachment((String)attachment.get("contentBytes"),(String)attachment.get("contentType"),
+                                        (String)attachment.get("name"), (String)attachment.get("@odata.type")));
                                 message.setAttachments(attachments);
                             });
 
-                            emailService.sendMessage(msToken, new MailMessage(message));
+                            ResponseEntity<String> sendResp = emailService.sendMessage(msToken, new MailMessage(message));
+                            if(sendResp.getStatusCode().is2xxSuccessful()){
+                                logInfoService.logInfo("Processed pdf sent "+ config.getRecipientEmailAddress() + " of subject "+ mail.get("subject"));
+                            }else{
+                                logInfoService.logInfo("Processed pdf failed sending to "+ config.getRecipientEmailAddress());
+                            }
 
                             ResponseEntity<String> moveResp = emailService.moveMessage(msToken, messageId, config.getArchiveFolder());
                             if (moveResp.getStatusCode().isError()) {

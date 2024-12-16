@@ -31,7 +31,7 @@ public class EmailService{
     public ResponseEntity<String> getFlaggedMessagesFromProcessed(String msToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(msToken);
-        String url = String.join("",config.getMailUrl(),"/mailFolders/", config.getProcessedFolderId(),
+        String url = String.join("",config.getMailUrl(), config.getMailAddress(),"/mailFolders/", config.getProcessedFolderId(),
                 "/messages?$select=id,subject", "&$filter=flag/flagStatus eq 'Flagged'");
         ResponseEntity<String> responseEntity = null;
         try {
@@ -54,7 +54,7 @@ public class EmailService{
     public ResponseEntity<String> getMessages(String msToken, String from, boolean include) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(msToken);
-        String url = String.join("",config.getMailUrl(),"/mailFolders/Inbox/messages?$select=id,subject");
+        String url = String.join("",config.getMailUrl(), config.getMailAddress(),"/mailFolders/Inbox/messages?$select=id,subject");
         if(StringUtils.isNotEmpty(from)){
             StringBuilder urlBuilder = new StringBuilder(url);
             urlBuilder.append("&$filter=from/emailAddress/address").append(include ? " eq " : " ne ")
@@ -75,7 +75,8 @@ public class EmailService{
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(authToken);
         headers.set("Prefer", "outlook.body-content-type=\"text\"");
-        String url = String.join("",config.getMailUrl(),"/mailFolders/Inbox/messages/", messageId, "?$select=body,subject");
+        String url = String.join("",config.getMailUrl(), config.getMailAddress(),
+                "/mailFolders/Inbox/messages/", messageId, "?$select=body,subject");
         ResponseEntity<String> responseEntity = null;
         try{
             responseEntity = restService.sendRequest(url, headers, null, HttpMethod.GET);
@@ -90,7 +91,8 @@ public class EmailService{
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(authToken);
         headers.set("Prefer", "outlook.body-content-type=\"text\"");
-        String url = String.join("",config.getMailUrl(),"/mailFolders/Inbox/messages/", messageId, "/attachments");
+        String url = String.join("",config.getMailUrl(), config.getMailAddress()
+                ,"/mailFolders/Inbox/messages/", messageId, "/attachments");
         ResponseEntity<String> responseEntity = null;
         try{
             responseEntity = restService.sendRequest(url, headers, null, HttpMethod.GET);
@@ -106,7 +108,8 @@ public class EmailService{
         headers.setBearerAuth(authToken);
         ResponseEntity<String> responseEntity = null;
         try{
-            responseEntity = restService.sendRequest(config.getMailUrl()+ "/mailFolders/Inbox/messages/"+ messageId, headers,null,
+            responseEntity = restService.sendRequest(config.getMailUrl()+config.getMailAddress()+
+                            "/mailFolders/Inbox/messages/"+ messageId, headers,null,
                     HttpMethod.DELETE);
         }catch (HttpClientErrorException | HttpServerErrorException ee) {
             logInfoService.logError("Failed post request ", ee);
@@ -119,7 +122,7 @@ public class EmailService{
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(authToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String url = String.join("/",config.getMailUrl(),"mailFolders/Inbox/messages",messageId,"move");
+        String url = String.join("/",config.getMailUrl(), config.getMailAddress(),"mailFolders/Inbox/messages",messageId,"move");
         ResponseEntity<String> responseEntity = null;
         try{
             responseEntity = restService.sendRequest(url, headers, new MoveMessage(moveToFolder), HttpMethod.POST);
@@ -136,9 +139,10 @@ public class EmailService{
         headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<String> responseEntity = null;
         try{
-            String m = jsonConverter.objectToJson(message);
-            responseEntity = restService.sendRequest(config.getMailUrl()+ "/sendMail", headers,
-                    m, HttpMethod.POST);
+            String requestBody = jsonConverter.objectToJson(message);
+            String url = String.join("", config.getMailUrl(),
+                    message.getMessage().getToRecipients().get(0).getEmailAddress().getAddress(), "/sendMail");
+            responseEntity = restService.sendRequest(url, headers, requestBody, HttpMethod.POST);
         }catch (HttpClientErrorException | HttpServerErrorException ee) {
             logInfoService.logError("Failed post request ", ee);
             responseEntity = ResponseEntity.status(ee.getStatusCode()).body(ee.getResponseBodyAsString());

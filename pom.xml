@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.atradius</groupId>
 	<artifactId>einvoice-ap-service</artifactId>
-	<version>1.0.1</version>
+	<version>1.2.0-SNAPSHOT</version>
 	<name>einvoice-ap-service</name>
 	<description>Einvoice AP Service</description>
 	<properties>
@@ -15,6 +15,7 @@
 		<spring-boot.version>3.3.4</spring-boot.version>
 		<maven.compiler.parameters>true</maven.compiler.parameters>
 		<andromeda.version>0.12.2</andromeda.version>
+		<pdfbox.version>2.0.29</pdfbox.version>
 	</properties>
 
 	<dependencies>
@@ -107,29 +108,19 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.itextpdf</groupId>
-			<artifactId>kernel</artifactId>
-			<version>7.0.4</version>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>${pdfbox.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.itextpdf</groupId>
-			<artifactId>io</artifactId>
-			<version>7.0.4</version>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>fontbox</artifactId>
+			<version>${pdfbox.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.itextpdf</groupId>
-			<artifactId>layout</artifactId>
-			<version>7.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>com.itextpdf</groupId>
-			<artifactId>forms</artifactId>
-			<version>7.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>com.itextpdf</groupId>
-			<artifactId>pdfa</artifactId>
-			<version>7.0.4</version>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox-tools</artifactId>
+			<version>${pdfbox.version}</version>
 		</dependency>
 
 

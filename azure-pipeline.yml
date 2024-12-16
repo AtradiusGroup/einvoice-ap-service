@@ -33,7 +33,7 @@ resources:
     - repository: Azure-pipeline-templates
       type: github
       name: AtradiusGroup/azure-pipeline-templates
-      ref: refs/tags/v0.4.0
+      ref: refs/tags/v0.8.0
       endpoint: Azure-pipeline-templates
 
 stages:
