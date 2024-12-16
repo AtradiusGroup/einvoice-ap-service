@@ -22,8 +22,8 @@ public class PdfControls {
     public int lineNumber = 3;
 
     public PdfControls(PDPageContentStream contentStream, float pageWidth, float pageHeight, PDType0Font regular, PDType0Font bold) {
-        this.pageWidth = new BigDecimal(pageWidth).subtract(PAGE_MARGIN.multiply(TWO));
-        this.pageHeight = new BigDecimal(pageHeight).subtract(PAGE_MARGIN.multiply(TWO));
+        this.pageWidth = BigDecimal.valueOf(pageWidth).subtract(PAGE_MARGIN.multiply(TWO));
+        this.pageHeight = BigDecimal.valueOf(pageHeight).subtract(PAGE_MARGIN.multiply(TWO));
         this.regular = regular;
         this.bold = bold;
         this.contentStream = contentStream;
@@ -47,11 +47,11 @@ public class PdfControls {
         String[] textParts = text.split(":");
         PDType0Font font = text.indexOf(":") != -1 ? bold : regular;
         String firstPart = text.indexOf(":") != -1 ? textParts[0] + ": " : textParts[0];
-        BigDecimal middlePosition = divide(pageWidth,new BigDecimal(2));
+        BigDecimal middlePosition = divide(pageWidth,TWO);
         List<String> lines = wrapText(firstPart, middlePosition);
         BigDecimal firstPartLength = getTextWidth(lines.get(0), font, FONT_SIZE);
         List<String> lines2 = textParts.length == 2 ? wrapText(textParts[1], middlePosition.subtract(firstPartLength)) : new ArrayList<>();
-        BigDecimal secondPartLength = lines2.size() > 0 ? getTextWidth(lines2.get(0), regular, FONT_SIZE) : new BigDecimal(0);
+        BigDecimal secondPartLength = lines2.size() > 0 ? getTextWidth(lines2.get(0), regular, FONT_SIZE) :ZERO;
 
         addText(lines, BigDecimal.ZERO, secondPartLength, left, false);
         if(textParts.length == 2){
@@ -69,7 +69,7 @@ public class PdfControls {
                         startX.floatValue(), getPositionY(lineNumber + lineIndex).floatValue());
             }else{
                 BigDecimal lineLength = getTextWidth(lines.get(lineIndex),regular, FONT_SIZE);
-                BigDecimal x = lineIndex == 0 ? pageWidth.subtract(secondPartLength).subtract(secondPart ? new BigDecimal(0): lineLength): pageWidth;
+                BigDecimal x = lineIndex == 0 ? pageWidth.subtract(secondPartLength).subtract(secondPart ? ZERO: lineLength): pageWidth;
                 contentStream.newLineAtOffset( x.floatValue(), getPositionY(lineNumber + lineIndex).floatValue());
             }
 
@@ -136,7 +136,7 @@ public class PdfControls {
         BigDecimal yPosition = table.yPosition(pageHeight, lineNumber);
         for(int cellIndex = 0; cellIndex <= table.columns(); cellIndex++){
             contentStream.moveTo(xPosition.floatValue(), yPosition.floatValue());
-            contentStream.lineTo(xPosition.floatValue(), yPosition.subtract(LINE_HEIGHT).subtract(LINE_HEIGHT.multiply(new BigDecimal(rowsize))).floatValue());
+            contentStream.lineTo(xPosition.floatValue(), yPosition.subtract(LINE_HEIGHT).subtract(LINE_HEIGHT.multiply(BigDecimal.valueOf(rowsize))).floatValue());
             contentStream.stroke();
 
             //No need to draw verticle line for last column
@@ -156,7 +156,7 @@ public class PdfControls {
     }
 
     private BigDecimal getPositionY(int lineNumber)throws IOException{
-        return pageHeight.subtract(new BigDecimal(lineNumber).multiply(LINE_HEIGHT));
+        return pageHeight.subtract(BigDecimal.valueOf(lineNumber).multiply(LINE_HEIGHT));
 
     }
 
@@ -183,7 +183,7 @@ public class PdfControls {
     }
 
     private BigDecimal getTextWidth(String text, PDType0Font font, int fontSzie)throws IOException{
-        return divide(new BigDecimal(font.getStringWidth(text)), THOUSAND).multiply(new BigDecimal(fontSzie));
+        return divide(BigDecimal.valueOf(font.getStringWidth(text)), THOUSAND).multiply(BigDecimal.valueOf(fontSzie));
     }
     public BigDecimal divide(BigDecimal numerator, BigDecimal denominator){
         return numerator.divide(denominator, 2, RoundingMode.HALF_EVEN);

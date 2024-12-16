@@ -21,7 +21,7 @@ public class PdfTable {
         }
         BigDecimal tableWidth = pageWidth.subtract(totalCellMargins);
         return cells[cellIndex].getWidth().multiply(tableWidth)
-                .multiply(new BigDecimal(0.01)).add(cells[cellIndex].getMarginX().multiply(TWO));
+                .multiply(BigDecimal.valueOf(0.01)).add(cells[cellIndex].getMarginX().multiply(TWO));
     }
 
     public int columns(){
@@ -37,6 +37,6 @@ public class PdfTable {
     }
 
     public BigDecimal yPosition(BigDecimal pageHeight, int lineNumber){
-        return pageHeight.subtract(new BigDecimal(lineNumber).multiply(LINE_HEIGHT));
+        return pageHeight.subtract(BigDecimal.valueOf(lineNumber).multiply(LINE_HEIGHT));
     }
 }
