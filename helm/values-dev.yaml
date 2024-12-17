@@ -146,7 +146,7 @@ configmaps:
     "MAIL_ADDRESS=sceinvoicingapgermanytest@atradius.com",
     "RECIPIENT_MAIL_ADDRESS=testdefinanceapinvoices@atradius.com",
     "PROCESSED_FOLDER_ID=AAMkADVhYjc1ZTlmLWQyNGItNDRlNS1hZGEwLTcwNzZlNjExNDI2YgAuAAAAAAALutgnCNdgRbZuNClyyP-5AQAP9WtSW8cYSJPFO61LE_RtAAD36finAAA=",
-    "EMAIL_PROCESS_SCHEDULE_TIME=0 0 * * * *",
+    "EMAIL_PROCESS_SCHEDULE_TIME=0 */15 * * * *",
     "APM_SERVER_URL=https://atradius-observability-development.apm.uksouth.azure.elastic-cloud.com:443",
     "APM_TOKEN=${APM_SECRET_TOKEN}",
     "ENVIRONMENT=dev"
