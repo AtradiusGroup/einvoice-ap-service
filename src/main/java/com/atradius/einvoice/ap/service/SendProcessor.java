@@ -3,7 +3,6 @@ package com.atradius.einvoice.ap.service;
 import com.atradius.einvoice.ap.config.APConfig;
 import com.atradius.einvoice.ap.exception.MailSendException;
 import com.atradius.einvoice.ap.model.*;
-import com.itextpdf.io.codec.Base64;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Component
@@ -44,10 +44,10 @@ public class SendProcessor implements UblProcessor{
                 message.setToRecipients(recipients);
 
                 List<Attachment> attachments = new ArrayList<>();
-                attachments.add(new Attachment(variables.getInvoiceNumber() + ".pdf", "application/pdf",
-                        Base64.encodeBytes(data.getPdfContents()), "#microsoft.graph.fileAttachment"));
-                attachments.add(new Attachment(variables.getInvoiceNumber() + ".xml", "application/xml",
-                        Base64.encodeBytes(data.getUblContent().getBytes(StandardCharsets.UTF_8)), "#microsoft.graph.fileAttachment"));
+                attachments.add(new Attachment(Base64.getEncoder().encodeToString(data.getPdfContents()), "application/pdf",
+                        variables.getInvoiceNumber() + ".pdf", "#microsoft.graph.fileAttachment"));
+                attachments.add(new Attachment(Base64.getEncoder().encodeToString(data.getUblContent().getBytes(StandardCharsets.UTF_8)), "application/xml",
+                        variables.getInvoiceNumber() + ".xml", "#microsoft.graph.fileAttachment"));
                 message.setAttachments(attachments);
                 message.setHasAttachments(true);
 
