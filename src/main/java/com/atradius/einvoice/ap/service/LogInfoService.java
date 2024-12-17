@@ -22,6 +22,7 @@ public class LogInfoService {
         data.put("correlationId", correlationId);
         data.put("invoiceNumber", invoiceNumber);
         data.put("info", info);
+        data.put("serviceType", "AP");
         log.info(converterService.objectToJson(data));
     }
 
@@ -30,6 +31,7 @@ public class LogInfoService {
         data.put("correlationId", variables.getCorrelationId());
         data.put("invoiceNumber", variables.getInvoiceNumber());
         data.put("stage", variables.getProcessStage());
+        data.put("serviceType", "AP");
         data.put("timeTaken", Duration.between(variables.getStageStartTime(), LocalDateTime.now()).toMillis());
         log.info(converterService.objectToJson(data));
     }
@@ -39,6 +41,7 @@ public class LogInfoService {
         data.put("correlationId", variables.getCorrelationId());
         data.put("invoiceNumber", variables.getInvoiceNumber());
         data.put("stage", stage);
+        data.put("serviceType", "AP");
         data.put("timeTaken", Duration.between(variables.getStageStartTime(), LocalDateTime.now()).toMillis());
         log.info(converterService.objectToJson(data));
     }
@@ -46,6 +49,7 @@ public class LogInfoService {
     public void logProcessTime(String stage, LocalDateTime startTime){
         Map<String, Object> data = new HashMap<>();
         data.put("stage", stage);
+        data.put("serviceType", "AP");
         data.put("timeTaken", Duration.between(startTime, LocalDateTime.now()).toMillis());
         log.info(converterService.objectToJson(data));
     }
@@ -54,12 +58,14 @@ public class LogInfoService {
         Map<String, Object> data = new HashMap<>();
         data.put("correlationId", correlationId);
         data.put("info", info);
+        data.put("serviceType", "AP");
         log.info(converterService.objectToJson(data));
     }
 
     public void logInfo(String info){
         Map<String, Object> data = new HashMap<>();
         data.put("info", info);
+        data.put("serviceType", "AP");
         log.info(converterService.objectToJson(data));
     }
 
@@ -72,6 +78,7 @@ public class LogInfoService {
         data.put("correlationId", correlationId);
         data.put("invoiceNumber", invoiceNumber);
         data.put("errorMsg", error);
+        data.put("serviceType", "AP");
         data.put("errorDetails", ExceptionUtils.getStackTrace(t));
         log.error(converterService.objectToJson(data));
     }
@@ -80,12 +87,14 @@ public class LogInfoService {
         Map<String, Object> data = new HashMap<>();
         data.put("correlationId", correlationId);
         data.put("errorMsg", error);
+        data.put("serviceType", "AP");
         data.put("errorDetails", ExceptionUtils.getStackTrace(t));
         log.error(converterService.objectToJson(data));
     }
 
     public void logError(String error, Throwable t){
         Map<String, Object> data = new HashMap<>();
+        data.put("serviceType", "AP");
         data.put("errorMsg", error);
         data.put("errorDetails", ExceptionUtils.getStackTrace(t));
         log.error(converterService.objectToJson(data));
