@@ -13,7 +13,6 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -32,16 +31,13 @@ public class PdfCreateProcessor implements UblProcessor{
     private PdfMappingData pdfMappingData;
     private UblXmlReader xmlReader;
     private APConfig config;
-    private ClassPathResource resourceLoader;
     private PdfCell[] totalCells;
     private PdfCell[] paymentTableCells;
 
-    public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader, APConfig config,
-                              ClassPathResource resourceLoader){
+    public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader, APConfig config){
         this.pdfMappingData = pdfMappingData;
         this.xmlReader = xmlReader;
         this.config = config;
-        this.resourceLoader = resourceLoader;
         totalCells = new PdfCell[]{
                 new PdfCell(BigDecimal.valueOf(85), BigDecimal.valueOf(40), TWELVE, RIGHT),
                 new PdfCell(BigDecimal.valueOf(15), BigDecimal.valueOf(8.5f), TWELVE, LEFT)
