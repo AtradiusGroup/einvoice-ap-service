@@ -145,7 +145,7 @@ configmaps:
     "MAIL_URL=https://graph.microsoft.com/v1.0/users/",
     "MAIL_ADDRESS=sceinvoicingapgermanylive@atradius.com",
     "RECIPIENT_MAIL_ADDRESS=definanceapinvoices@atradius.com",
-    "PROCESSED_FOLDER_ID=AAMkADQwMDQyOTgyLTFlZGQtNGUzZC04Y2FjLTY3NThkMDNjZmE2ZAAuAAAAAAAu-GeeLCS4SIvucaia6WUqAQA5_ZhLM1j3TqTPdeCy0mqhAAD5CiJXAAA=",
+    "PROCESSED_FOLDER_ID=AAMkADRhZDM2ZDkzLTUwOTItNDY3ZS1iMTJmLWRkMDc1YzFlM2YwYQAuAAAAAAC-Nqeu-2AITpxc3ix2qEGsAQCFpariaQVnS7dwUu2cHDNJAAADc_YvAAA=",
     "EMAIL_PROCESS_SCHEDULE_TIME=0 0 * * * *",
     "APM_SERVER_URL=https://atradius-observability-production.apm.uksouth.azure.elastic-cloud.com:443",
     "APM_TOKEN=${APM_SECRET_TOKEN}",
