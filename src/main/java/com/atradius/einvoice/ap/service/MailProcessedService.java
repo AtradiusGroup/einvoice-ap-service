@@ -82,7 +82,7 @@ public class MailProcessedService {
         if(sendResp.getStatusCode().is2xxSuccessful()){
             logInfoService.logInfo("Processed pdf sent "+ config.getRecipientEmailAddress() + " of subject "+ mail.get("subject"));
         }else{
-            logInfoService.logInfo("Processed pdf failed sending to "+ config.getRecipientEmailAddress());
+            logInfoService.logInfo("Processed pdf failed sending to "+ config.getRecipientEmailAddress() + " with error "+ sendResp.getBody());
         }
 
         ResponseEntity<String> moveResp = emailService.moveMessage(msToken, messageId, config.getArchiveFolder());
