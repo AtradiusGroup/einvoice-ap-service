@@ -128,9 +128,4 @@ public class PdfCreateProcessor implements UblProcessor{
         }
         return documentType;
     }
-
-    public static void main(String[] args)throws Exception{
-        PdfCreateProcessor p = new PdfCreateProcessor(null, null, null, null);
-        p.process(null, null);
-    }
 }
