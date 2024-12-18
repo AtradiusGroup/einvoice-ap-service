@@ -12,7 +12,7 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -31,16 +31,13 @@ public class PdfCreateProcessor implements UblProcessor{
     private PdfMappingData pdfMappingData;
     private UblXmlReader xmlReader;
     private APConfig config;
-    private ResourceLoader resourceLoader;
     private PdfCell[] totalCells;
     private PdfCell[] paymentTableCells;
 
-    public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader, APConfig config,
-                              ResourceLoader resourceLoader){
+    public PdfCreateProcessor(PdfMappingData pdfMappingData, UblXmlReader xmlReader, APConfig config){
         this.pdfMappingData = pdfMappingData;
         this.xmlReader = xmlReader;
         this.config = config;
-        this.resourceLoader = resourceLoader;
         totalCells = new PdfCell[]{
                 new PdfCell(BigDecimal.valueOf(85), BigDecimal.valueOf(40), TWELVE, RIGHT),
                 new PdfCell(BigDecimal.valueOf(15), BigDecimal.valueOf(8.5f), TWELVE, LEFT)
@@ -64,13 +61,13 @@ public class PdfCreateProcessor implements UblProcessor{
             document.addPage(page);
 
             try(PDPageContentStream contents = new PDPageContentStream(document, page)) {
-                PDType0Font regular = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/NotoSans-Regular.ttf").getInputStream());
-                PDType0Font bold = PDType0Font.load(document, resourceLoader.getResource("classpath:fonts/NotoSans-Bold.ttf").getInputStream());
+                PDType0Font regular = PDType0Font.load(document, new ClassPathResource("classpath:fonts/NotoSans-Regular.ttf").getInputStream());
+                PDType0Font bold = PDType0Font.load(document, new ClassPathResource("classpath:fonts/NotoSans-Bold.ttf").getInputStream());
                 PdfControls pdfControls = new PdfControls(contents, page.getMediaBox().getWidth(), page.getMediaBox().getHeight(), regular, bold);
                 pdfControls.lineNumber = 2;
 
-                String logoPath = resourceLoader.getResource("classpath:logoAtradius_tagline_red.PNG").getFile().getPath();
-                PDImageXObject logo = PDImageXObject.createFromFile(logoPath, document);
+                byte[] logoPath = new ClassPathResource("classpath:logoAtradius_tagline_red.PNG").getContentAsByteArray();
+                PDImageXObject logo = PDImageXObject.createFromByteArray(document, logoPath, "logoAtradius_tagline_red.PNG");
                 pdfControls.addLogo(logo);
 
                 variables.setDocumentType(getDocumentType(data.getUblContent()));
@@ -130,10 +127,5 @@ public class PdfCreateProcessor implements UblProcessor{
             documentType = "UNKOWN";
         }
         return documentType;
-    }
-
-    public static void main(String[] args)throws Exception{
-        PdfCreateProcessor p = new PdfCreateProcessor(null, null, null, null);
-        p.process(null, null);
     }
 }
